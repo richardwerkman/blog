@@ -120,7 +120,7 @@ I also experimented with different AI coding agents:
 
 However, I did notice that some models, like Gemma-4 and GPT-OSS, struggled with tool-calling in Copilot. They often failed to execute code or verify changes unless I was very explicit in my prompts.
 
-![image: Copilot with Local Model](../_img/retry.png)
+![image: Copilot with Local Model](/assets/images/Screen%20Recording%202026-06-13%20at%2016.39.48.mov)
 
 The retry button will often show its face when the model fails to call tools properly. It's a reminder that local models aren't perfect yet.
 
