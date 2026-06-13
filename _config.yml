@@ -8,6 +8,8 @@ theme: jekyll-theme-chirpy
 # Enable Jekyll Feed for RSS
 plugins:
   - jekyll-feed
+theme_config: theme_config.yml
+author: Richard Werkman
 
 # Markdown options
 markdown: kramdown
@@ -19,3 +21,6 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - vendor/bundle
+# Social links for the theme navigation
+social_links:
+  github: https://github.com/richardwerkman
