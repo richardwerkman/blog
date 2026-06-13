@@ -1,0 +1,21 @@
+title: My AI Journey Blog
+description: A personal blog about using local AI tools and experiences.
+baseurl: ""
+url: "http://localhost:4000"
+
+theme: jekyll-theme-chirpy
+
+# Enable Jekyll Feed for RSS
+plugins:
+  - jekyll-feed
+
+# Markdown options
+markdown: kramdown
+kramdown:
+  input: GFM
+
+# Exclude from build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor/bundle
