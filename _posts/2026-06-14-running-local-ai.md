@@ -22,9 +22,9 @@ Here's the kicker: open-weight models are typically about 9 months behind their 
 
 ## My Setup: The Hardware
 
-I'm running all this on an **M4 Pro with 48GB of unified RAM**. Is it overkill for casual browsing? Absolutely. Is it perfect for AI experimentation? *Chef's kiss.*
+I'm running all this on an **M4 Pro with 48GB of unified RAM**. Is it overkill for casual browsing? Absolutely. Is it perfect for AI experimentation? Heck yes!
 
-The unified memory architecture is a game-changer—the GPU and CPU share the same memory pool, which means you can load larger models than you'd expect.
+The unified memory architecture is a game-changer. The GPU and CPU share the same memory pool, which means you can load larger models than you'd expect. But even without unified memory, you can still fairly capable smaller models on a traditional setup. How? Read on!
 
 ## AI Terminology 101
 
