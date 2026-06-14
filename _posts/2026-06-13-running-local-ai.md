@@ -8,7 +8,7 @@ layout: post
 
 # Running AI on Your Own Hardware: A Wild Ride
 
-So you're thinking about running AI locally? Welcome to the club! After spending countless hours tinkering with models, dealing with mysterious errors, and watching my laptop fan work overtime, I've learned a thing or two. Let me share my journey—the good, the bad, and the surprisingly fast.
+So you're thinking about running AI locally? Welcome to the club! After spending countless hours tinkering with models, dealing with mysterious errors, and watching my laptop fan work overtime, I've learned a thing or two. Let me share my journey to local AI freedom.
 
 ## Why Go Local Anyway?
 
@@ -67,13 +67,13 @@ I've tested a few runners for local inference. Here's how they stack up:
 
 I keep coming back to **LM Studio** because it just *works*. The UI is clean, downloading models from HuggingFace is a breeze, and the just-in-time model loading means the model only spins up when I actually need it from VS Code. 
 
-![LM Studio Interface](/lm-studio-browser.png)
+![LM Studio Interface](/assets/img/posts/lm-studio-browser.png)
 *LM Studio's clean interface makes model management actually enjoyable*
 
-![LM Studio Interface](/lm-studio-models.png)
+![LM Studio Interface](/assets/img/posts/lm-studio-models.png)
 *It's easy to see which models you have, their sizes, and manage them*
 
-![LM Studio Interface](/lm-studio-server.png)
+![LM Studio Interface](/assets/img/posts/lm-studio-server.png)
 *The server tab shows you which model is active and lets you configure JIT settings like idle timeout*
 
 The main caveat? MLX support is still a bit wonky. Hopefully, future updates will iron this out.
@@ -127,7 +127,7 @@ That's it! Copilot will now use your local model in the chat. It's a bit of a se
 
 One thing I noticed was that whenever I started a new prompt, the model would take a moment to "warm up" before generating an initial response. This is because Copilot sends a large system prompt to the model to set the context for the coding task. The model needs to process this system prompt before it can generate a response, which can take a few seconds, especially with larger models. Once the initial response is generated, subsequent interactions are much faster since the model is already "warmed up" and has the context in memory. This is something to keep in mind when using local models with Copilot. You might experience a slight delay on the first response, but it should speed up after that.
 
-![image: Copilot with Local Model](Screen%20Recording%202026-06-13%20at%2016.39.48.gif)
+![image: Copilot with Local Model](/assets/img/posts/Screen Recording 2026-06-13 at 16.39.48.gif)
 
 After some first successes, I did notice that some models, but mainly Gemma-4, struggled with tool-calling. They often failed to execute a prompt in the terminal or modify a file. At first I thought it was an issue with the model, but it turned out to be a combination of the model's capabilities and how Copilot interacts with it. Some models just aren't as good at understanding when to call tools or how to structure their responses for tool-calling. This is a crucial aspect of the agent experience, and it's something to keep in mind when choosing a model for local AI. However, with all models I had some issues with tool calling. So I figured it might be more an issue with Copilot's implementation of tool calling rather than the models themselves. I hope future updates to Copilot will improve this aspect, especially for local models.
 
@@ -155,11 +155,19 @@ On the huggingface model page, you'll often find recommended settings for temper
 
 I'm used to agents that automatically verify their code changes by running builds and tests. Smaller models like Gemma-4 and GPT-OSS often skip verification unless you're *very* explicit. You can't assume they'll do the smart thing—you need to spell it out.
 
+### 4. MLX Optimization is a Game-Changer
+
+If you're on Apple Silicon, MLX optimization is a must. It can make a huge difference in speed and responsiveness. For example, Qwen3.6-35B-A3B ran at ~78 tokens per second with MLX optimization, but only ~30 tokens per second without it. That's a 2.6x speedup! If you're serious about running local AI on a Mac, MLX is the way to go.
+
+### 5. Mind your RAM
+
+Models can be memory hogs. Even with 48GB of unified RAM, I had to be careful about which models I loaded.. If you run out of RAM, your system will start swapping to disk, which can lead to severe slowdowns and even crashes. My Mac crashed 2 times because I overstepped my memory usage. Keep an eye on your memory usage and be mindful of the models you have loaded at any given time. Also keep in mind that models use a base amount of RAM just to load, and then additional RAM for the context window. For example, Qwen3.6-35B-A3B uses around 20GB of RAM just to load, and then an additional 1-10GB for the context window, depending on the context length. If you try to have multiple conversations at once, your RAM usage can quickly exceed your available memory. Try to use only one session at a time and close any unused apps to free up memory. If you find yourself running out of RAM frequently, consider using a smaller model.
+
 ## The Current Setup
 
 In the end, I settled on a workflow that balances speed, capability, and reliability:
 1. **LM Studio** for model management and JIT loading of models
-2. **Qwen3.6-35B-A3B** for fast, capable responses, vision capabilities, and tool-calling
+2. **Qwen3.6-35B-A3B** for fast, capable responses, vision capabilities, and excelent tool-calling
 3. **MLX optimization** for maximum performance on my M4 Pro
 4. **Open Code** as the agent framework, since Copilot was unreliable with local models
 
@@ -169,11 +177,7 @@ Should you run AI locally on your macbook? Yes, but with caveats. If you're a ti
 
 **Don't expect miracles.** After considerable tinkering, I got a workflow running. But it took trial and error, patience, and accepting that local models aren't frontier models. You can expect to run into some frustrating moments. Models that are supposed to support tool-calling might not do it reliably. Some models will get stuck in loops. It's part of the journey.
 
-**The future is bright.** If open-weight models continue tracking 9 months behind frontier models, we'll soon have Sonnet or Opus-class models running locally. Of course, you'll need serious hardware for that... Just like current DeepSeek v4 models need 500+ GB of RAM. But the trajectory is clear. Thanks to quantization and better optimization, the hardware requirements are becoming more manageable.
-
-**My sweet spot**: For simple-to-moderate coding tasks, a 20-30B parameter model running on 48GB of RAM sometimes works. MLX optimization is a must for larger models. For more complex tasks, you're better off with a smaller, well-optimized model that can call tools effectively.
-
-**The really exciting prospect**: In 9 months, if we can run a Sonnet-class model locally on 48GB of RAM? That would be a game-changer.
+**The future is bright.** If open-weight models continue tracking 9 months behind frontier models, we'll soon have Sonnet or Opus-class models running locally. Of course, you'll need serious hardware for that... Like DeepSeek v4 1.6t parameter models needing 900+ GB of VRAM! But the trajectory is clear. Thanks to quantization and better optimization, the hardware requirements are becoming more manageable.
 
 ## What's Next?
 
@@ -188,6 +192,3 @@ If you're considering going local:
 
 Have you tried running AI locally? Hit me up on [GitHub](https://github.com/richardwerkman) and share your experiences. I'd love to hear what's working (or not working) for you!
 
----
-
-*Posted from my M4 Pro, where the fans are finally quiet again* 🎉
