@@ -66,8 +66,14 @@ I've tested a few runners for local inference. Here's how they stack up:
 
 I keep coming back to **LM Studio** because it just *works*. The UI is clean, downloading models from HuggingFace is a breeze, and the just-in-time model loading means the model only spins up when I actually need it from VS Code. 
 
-![LM Studio Interface](/assets/img/posts/lm-studio-screenshot.png)
+![LM Studio Interface](/lm-studio-browser.png)
 *LM Studio's clean interface makes model management actually enjoyable*
+
+![LM Studio Interface](/lm-studio-models.png)
+*It's easy to see which models you have, their sizes, and manage them*
+
+![LM Studio Interface](/lm-studio-server.png)
+*The server tab shows you which model is active and lets you configure JIT settings like idle timeout*
 
 The main caveat? MLX support is still a bit wonky. Hopefully, future updates will iron this out.
 
@@ -75,20 +81,20 @@ The main caveat? MLX support is still a bit wonky. Hopefully, future updates wil
 
 I put several models through their paces for real coding work. Here's the roster:
 
-| Model | Parameters | Download Size | Speed (tok/s) | Verdict |
-|-------|------------|---------------|---------------|---------|
-| **Qwen3.6-35B-A3B** | 32B (3B active) | ~20GB (4-bit) | ~78 | ⭐⭐⭐⭐⭐ Fast and capable, but prone to thinking loops |
-| **Qwen3.6-27B** | 27B full | ~16GB (4-bit) | ~10 | ⭐⭐ Capable but too slow |
-| **Qwen3.5-9B** | 9B full | ~10GB (4-bit) | ~27 | ⭐⭐ Not very capable, and slow |
-| **Gemma-4-27B-A4B** | 27B (4B active) | ~16GB (4-bit) | ~72 | ⭐⭐⭐ Fast, but tool issues with MLX |
-| **Gemma-4-31B** | 31B full | ~18GB (4-bit) | ~8 | ⭐⭐ Too slow, no MLX support (yet)  |
-| **GPT-OSS-20B** | 20B (less active) | ~12GB (4-bit) | ~70 | ⭐⭐⭐⭐ Surprisingly capable, but small context window |
+| Model | Parameters | Download Size | Speed (tok/s) | Vision | Verdict |
+|-------|------------|---------------|---------------|--------|---------|
+| **Qwen3.6-35B-A3B** | 32B (3B active) | ~20GB (4-bit) | ~78 | ✅ Yes | ⭐⭐⭐⭐⭐ Fast and capable, but prone to thinking loops |
+| **Qwen3.6-27B** | 27B full | ~16GB (4-bit) | ~10 | ✅ Yes | ⭐⭐ Capable but too slow |
+| **Qwen3.5-9B** | 9B full | ~10GB (4-bit) | ~27 | ✅ Yes | ⭐⭐ Not very capable, and slow |
+| **Gemma-4-27B-A4B** | 27B (4B active) | ~16GB (4-bit) | ~72 | ✅ Yes | ⭐⭐⭐ Fast, but tool issues with MLX |
+| **Gemma-4-31B** | 31B full | ~18GB (4-bit) | ~8 | ✅ Yes | ⭐⭐ Too slow, no MLX support (yet)  |
+| **GPT-OSS-20B** | 20B (less active) | ~12GB (4-bit) | ~70 | ❌ No | ⭐⭐⭐⭐ Surprisingly capable, but small context window |
 
 Note that these speeds were measured on my M4 Pro with 48GB of RAM using MLX optimization. Your mileage may vary based on your hardware.
 
 ### Honorable Mention: GPT-OSS-20B
 
-For an older model of this size, GPT-OSS-20B punched way above its weight class. I used it to generate this entire blog website, and it only took 15 minutes! It's proof that you don't always need the latest and greatest.
+For an older model of this size, GPT-OSS-20B punched way above its weight class. However, the lack of vision capabilities and a smaller context window made it less ideal for coding tasks that require understanding of images or larger codebases.
 
 ### The Fast but Flawed: Qwen3.6-35B-A3B
 
