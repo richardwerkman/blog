@@ -29,10 +29,16 @@ kramdown:
   syntax_highlighter: rouge
 
 # Locale
-locale: en-US
+locale: en
 
 # Date format
 date_format: "%Y-%m-%d"
+
+# Compress settings
+compress_html:
+  ignore:
+    envs:
+      - development
 
 # Build settings
 exclude:

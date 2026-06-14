@@ -3,6 +3,7 @@ title: "My Journey Running AI Locally: Is It Worth It?"
 date: 2026-06-13 10:00:00 +0000
 categories: [AI, Local AI, Machine Learning]
 tags: [local-ai, llm, mlx, ollama, lm-studio, m4-pro]
+layout: post
 ---
 
 # Running AI on Your Own Hardware: A Wild Ride
