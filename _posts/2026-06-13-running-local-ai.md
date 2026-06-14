@@ -4,6 +4,7 @@ date: 2026-06-13 10:00:00 +0000
 categories: [AI, Local AI, Machine Learning]
 tags: [local-ai, llm, mlx, ollama, lm-studio, m4-pro]
 layout: post
+comments: true
 ---
 
 So you're thinking about running AI locally? Welcome to the club! After spending many hours tinkering with different models, dealing with mysterious errors, and watching my laptop fan work overtime, I've learned a thing or two. Let me share my journey to local AI freedom.
