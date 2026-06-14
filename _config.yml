@@ -6,7 +6,7 @@ url: "https://richardwerkman.github.io"
 
 # Theme
 theme: jekyll-theme-chirpy
-avatar: /blog/assets/img/profile.png
+avatar: assets/img/profile.png
 
 # Author settings
 author:
