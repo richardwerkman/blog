@@ -57,26 +57,34 @@ I've tested a few runners for local inference. Here's how they stack up:
 
 | Tool | Pros | Cons | Best For |
 |------|------|------|----------|
-| **LM Studio** | Beautiful UX, HuggingFace model browser, JIT loading, vscode integration | Some MLX compatibility issues | General use, beginners |
+| **LM Studio** | Beautiful UX, HuggingFace model browser, JIT loading | Some MLX compatibility issues | General use, beginners |
 | **Ollama** | Simple CLI, great for automation, solid stability | Limited model format support | Scripts, automation |
 | **Llama.cpp** | Maximum control, bleeding edge features | Steeper learning curve | Power users |
 | **MLX Server** | Native Apple Silicon optimization through CLI | Apple-only, smaller ecosystem | Maximum performance on Mac |
-| **oLMX** | Open-source MLX implementation with heavy caching | Still in early stages, some stability issues | Open-source enthusiasts |
+| **oMLX** | Open-source MLX implementation with heavy caching | Still in early stages, some stability issues | Open-source enthusiasts |
+
+### Ollama
+
+I first tried **Ollama** because of its simplicity and good reputation. It was pretty easy to set up and worked decently for basic tasks. However, I didn't find it very user-friendly for managing multiple models or switching between them.
 
 ### My Favorite: LM Studio
 
-I keep coming back to **LM Studio** because it just *works*. The UI is clean, downloading models from HuggingFace is a breeze, and the just-in-time model loading means the model only spins up when I actually need it from VS Code. 
+I keep coming back to **LM Studio** because it just *works*. The UI is clean and intuitive, downloading models from HuggingFace is a breeze, and the just-in-time model loading means the model only spins up when I actually need it. 
 
-![LM Studio Interface](/assets/img/posts/lm-studio-browser.png)
+![LM Studio Interface](/assets/img/posts/running-local-ai/lm-studio-browser.png)
 *LM Studio's clean interface makes model management actually enjoyable*
 
-![LM Studio Interface](/assets/img/posts/lm-studio-models.png)
-*It's easy to see which models you have, their sizes, and manage them*
+![LM Studio Interface](/assets/img/posts/running-local-ai/lm-studio-models.png)
+*It's easy to see which models you have, their sizes, configure and manage them*
 
-![LM Studio Interface](/assets/img/posts/lm-studio-server.png)
+![LM Studio Interface](/assets/img/posts/running-local-ai/lm-studio-server.png)
 *The server tab shows you which model is active and lets you configure JIT settings like idle timeout*
 
-The main caveat? MLX support is still a bit wonky. Hopefully, future updates will iron this out.
+If you want a hassle-free experience with local AI, LM Studio is the way to go. It has some MLX compatibility issues, but the developers are actively working on it, and it's still the most user-friendly option for managing local models.
+
+### oMLX
+
+I also tried **oMLX**, an open-source implementation of MLX. It's promising even greater performance than standard MLX by using heavy caching. However, it's still in the early stages and I missed some of the features in LM Studio, like the HuggingFace model browser and JIT loading. If you're really into performance optimization and don't mind the wonky UX, it's worth giving oMLX a try.
 
 ## Battle of the Models
 
@@ -95,15 +103,15 @@ Note that these speeds were measured on my M4 Pro with 48GB of RAM using MLX opt
 
 ### Honorable Mention: GPT-OSS-20B
 
-For an older model of this size, GPT-OSS-20B punched way above its weight class. However, the lack of vision capabilities and a smaller context window made it less ideal for coding tasks that require understanding of images or larger codebases.
-
-### The Fast but Flawed: Qwen3.6-35B-A3B
-
-Qwen3.6-35B-A3B with its MoE architecture was blazingly fast and had excellent tool-calling capabilities.
+For an older model of this size, GPT-OSS-20B punched way above its weight class. However, the lack of vision capabilities and a smaller context window made it less ideal for coding tasks that require understanding of screenshots or larger codebases.
 
 ### The Tortoises: Full Weight Models
 
-Both Qwen3.6-27B and Gemma-4-31B were painfully slow on my hardware, even with MLX optimization. At 5-6 tokens per second, you could make a coffee while waiting for a response. It takes minutes to even process the system prompt, so you will not see a response until much later. I even saw timeouts in Copilot. Not ideal for interactive coding. Even a smaller model like Qwen3.5-9B was fairly slow.
+Both Qwen3.6-27B and Gemma-4-31B were painfully slow on my hardware, even with MLX optimization. At ~10 tokens per second, you could make a coffee while waiting for a response. It takes minutes to even process the system prompt, so you will not see a response until much later. I even saw timeouts in Copilot. Not ideal for interactive coding. Even a smaller full weight model like Qwen3.5-9B was fairly slow.
+
+### The Fast and Capable: Qwen3.6-35B-A3B
+
+Qwen3.6-35B-A3B with its MoE architecture was blazingly fast! It feels just as fast as running a cloud hosted model. It's vision capabilities are decent and it had excellent tool-calling capabilities. I was able to generate this whole blog website with it without writing a single line of code myself. This is definitely my favorite model for my hardware right now.
 
 ## The Agent Framework
 
@@ -111,7 +119,7 @@ I also experimented with different local AI coding agent frameworks:
 
 - **GitHub Copilot** (via OAICopilot plugin): My daily driver
 - **Continue**: Most recommended online. Good for simple tasks, but lacks advanced features
-- **Kilo Code**: Like Continue but with more features
+- **Kilo Code**: Like Continue but with more features and a cleaner interface
 - **OpenCode**: Open-source alternative to Claude Code, with a native MacOS app
 - **Claude Code**: Supports local models, but I prefer Open Code because it is open-source.
 
@@ -127,7 +135,7 @@ That's it! Copilot will now use your local model in the chat. It's a bit of a se
 
 One thing I noticed was that whenever I started a new prompt, the model would take a moment to "warm up" before generating an initial response. This is because Copilot sends a large system prompt to the model to set the context for the coding task. The model needs to process this system prompt before it can generate a response, which can take a few seconds, especially with larger models. Once the initial response is generated, subsequent interactions are much faster since the model is already "warmed up" and has the context in memory. This is something to keep in mind when using local models with Copilot. You might experience a slight delay on the first response, but it should speed up after that.
 
-![image: Copilot with Local Model](/assets/img/posts/Screen Recording 2026-06-13 at 16.39.48.gif)
+![image: Copilot with Local Model](/assets/img/posts/running-local-ai/ghcopilot.gif)
 
 After some first successes, I did notice that some models, but mainly Gemma-4, struggled with tool-calling. They often failed to execute a prompt in the terminal or modify a file. At first I thought it was an issue with the model, but it turned out to be a combination of the model's capabilities and how Copilot interacts with it. Some models just aren't as good at understanding when to call tools or how to structure their responses for tool-calling. This is a crucial aspect of the agent experience, and it's something to keep in mind when choosing a model for local AI. However, with all models I had some issues with tool calling. So I figured it might be more an issue with Copilot's implementation of tool calling rather than the models themselves. I hope future updates to Copilot will improve this aspect, especially for local models.
 
@@ -139,6 +147,11 @@ Finally I encountered so many issues with tool calling that the retry button in 
 
 After I tried some vscode extensions for other agents like Kilo Code and Continue, I found that Open Code was the most reliable for local models. It has a native MacOS app, which makes it feel more integrated into the system. The tool-calling capabilities were much better than what I experienced with Copilot, and it handled local models more gracefully. I could finally get a workflow going where I could generate code, run it, and iterate without constantly hitting errors or getting stuck in loops. Open Code also doesn't have the same integration level with VS Code as Copilot does, but it was still a solid experience overall. I was able to generate this whole blog website using Open Code with Qwen3.6-35B-A3B, and it only took a few prompts!
 
+![Open Code Interface](/assets/img/posts/running-local-ai/opencode.gif)
+*Open Code running Qwen3.6-35B-A3B feels incredibly responsive and integrated.*
+
+With Open Code I didn't experience any tool-calling issues or timeouts. The model was able to execute commands in the terminal and modify files as expected. It felt like a much more seamless experience compared to Copilot. Also the system prompt is a lot smaller than Copilot's, which contributes to faster inital response times. If you're looking for a local AI agent framework that works well with local models, I would definitely recommend giving Open Code a try.
+
 ## Hard-Won Lessons
 
 After weeks of tinkering, here's what I learned:
@@ -149,7 +162,7 @@ Yes, in theory, you can use Copilot with local models. In practice, it often fai
 
 ### 2. Use the recommended settings for your model.
 
-On the huggingface model page, you'll often find recommended settings for temperature, repetition penalty, and other parameters. These are there for a reason. Models can behave unpredictably if you stray too far from the recommended settings. For example, I found that Qwen3.6-35B-A3B performed best with a temperature of 0.7 and a repetition penalty of 1.2. Deviating from these settings led to more frequent thinking loops and less coherent output.
+On the huggingface model page, you'll often find recommended settings for temperature, repetition penalty, and other parameters. These are there for a reason. Models can behave unpredictably if you stray too far from the recommended settings. For example, I found that Qwen3.6-35B-A3B [recommends](https://huggingface.co/Qwen/Qwen-3.6-35B-A3B) a temperature of 0.7 and a repetition penalty of 1.2. Deviating from these settings led to more frequent thinking loops and less reliable output. They do recommend different settings for different use cases. Most models have these recommendations, so it's worth taking the time to read through them and adjust your settings accordingly. It can make a big difference in the quality and reliability of the responses you get from the model.
 
 ### 3. Smaller Models Are Lazy
 
@@ -173,22 +186,19 @@ In the end, I settled on a workflow that balances speed, capability, and reliabi
 
 ## Final Thoughts
 
-Should you run AI locally on your macbook? Yes, but with caveats. If you're a tinkerer who enjoys the challenge of setting up and optimizing models, you'll find it rewarding. But if you just want a smooth, reliable experience, cloud-based solutions like Claude Code or Copilot are still the way to go.
+Should you run AI locally on your macbook? Like always, it depends.
 
-**Don't expect miracles.** After considerable tinkering, I got a workflow running. But it took trial and error, patience, and accepting that local models aren't frontier models. You can expect to run into some frustrating moments. Models that are supposed to support tool-calling might not do it reliably. Some models will get stuck in loops. It's part of the journey.
+If you're a tinkerer who enjoys the challenge of setting up and optimizing models, you'll find it rewarding. But if you just want a smooth, reliable experience, cloud-based solutions like Claude Code or Copilot are still the way to go.
+
+**Don't expect miracles.** After considerable tinkering, I got a workflow running. But it took trial and error, patience, and accepting that local models aren't frontier models. You can expect to run into some frustrating moments. Models that are supposed to support tool-calling might not do it reliably. Some models will get stuck or your laptop might crash. It's part of the journey.
 
 **The future is bright.** If open-weight models continue tracking 9 months behind frontier models, we'll soon have Sonnet or Opus-class models running locally. Of course, you'll need serious hardware for that... Like DeepSeek v4 1.6t parameter models needing 900+ GB of VRAM! But the trajectory is clear. Thanks to quantization and better optimization, the hardware requirements are becoming more manageable.
+
+**Switching between tools.** For now I'll keep both Copilot and Open Code in my toolkit. Copilot is great for quick tasks and has better integration with VS Code, while Open Code is more reliable for local models. It's nice to have options depending on the task at hand. I might consider switching to Open Code full-time if they continue improving their VS Code integration and add more features. But for now, having both gives me the best of both worlds.
 
 ## What's Next?
 
 I'll keep watching for new models and better tooling. The local AI space is evolving rapidly, and every month brings new possibilities.
-
-If you're considering going local:
-1. Start with LM Studio for ease of use
-2. Try GPT-OSS-20B or similar ~20B parameter models
-3. Be patient with setup and tuning
-4. Keep your expectations realistic
-5. Enjoy the privacy and cost savings!
 
 Have you tried running AI locally? Hit me up on [GitHub](https://github.com/richardwerkman) and share your experiences. I'd love to hear what's working (or not working) for you!
 
