@@ -47,3 +47,19 @@ exclude:
   - README.md
   - Gemfile
   - Gemfile.lock
+
+# Comments
+comments:
+  provider: giscus
+
+giscus:
+  repo: "richardwerkman/blog"
+  repo_id: "R_kgDOS4l-Dg"
+  category: "Comments"
+  category_id: "DIC_kwDOS4l-Ds4C_I68"
+  mapping: "pathname"
+  reactions_enabled: 1
+  emit_metadata: 0
+  lang: "en"
+  input_position: "top"
+  theme: "light"

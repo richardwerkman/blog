@@ -6,9 +6,7 @@ tags: [local-ai, llm, mlx, ollama, lm-studio, m4-pro]
 layout: post
 ---
 
-# Running AI on Your Own Hardware: A Wild Ride
-
-So you're thinking about running AI locally? Welcome to the club! After spending countless hours tinkering with models, dealing with mysterious errors, and watching my laptop fan work overtime, I've learned a thing or two. Let me share my journey to local AI freedom.
+So you're thinking about running AI locally? Welcome to the club! After spending many hours tinkering with different models, dealing with mysterious errors, and watching my laptop fan work overtime, I've learned a thing or two. Let me share my journey to local AI freedom.
 
 ## Why Go Local Anyway?
 
