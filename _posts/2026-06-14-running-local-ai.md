@@ -165,7 +165,7 @@ On the Hugging Face model page, you'll often find recommended settings for tempe
 
 ### 3. Smaller Models Are Lazy
 
-I'm used to agents that automatically verify their code changes by running builds and tests. Smaller models like Gemma-4 and GPT-OSS often skip verification unless you're *very* explicit. You can't assume they'll do the smart thing—you need to spell it out.
+I'm used to agents that automatically verify their code changes by running builds and tests. Smaller models like Gemma-4 and GPT-OSS often skip verification unless you're *very* explicit. You can't assume they'll do the smart thing, you need to spell it out.
 
 ### 4. MLX Optimization is a Game-Changer
 
