@@ -116,7 +116,7 @@ The setup:
 
 That's it! Copilot will now use your local model for code generation and tool-calling. It's a bit of a setup process, but once it's running, it's pretty seamless.
 
-One thing I noticed was that whenever I started a new prompt, the model would take a moment to "warm up" before generating an initial response. This is because Copilot sends a system prompt to the model to set the context for the coding task. The model needs to process this system prompt before it can generate a response, which can take a few seconds, especially with the larger models. Once the initial response is generated, subsequent interactions are much faster since the model is already "warmed up" and has the context in memory. This is something to keep in mind when using local models with Copilot—you might experience a slight delay on the first response, but it should speed up after that.
+One thing I noticed was that whenever I started a new prompt, the model would take a moment to "warm up" before generating an initial response. This is because Copilot sends a large system prompt to the model to set the context for the coding task. The model needs to process this system prompt before it can generate a response, which can take a few seconds, especially with the larger models. Once the initial response is generated, subsequent interactions are much faster since the model is already "warmed up" and has the context in memory. This is something to keep in mind when using local models with Copilot. You might experience a slight delay on the first response, but it should speed up after that.
 
 ![image: Copilot with Local Model](/assets/images/Screen%20Recording%202026-06-13%20at%2016.39.48.mov)
 

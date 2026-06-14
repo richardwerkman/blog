@@ -8,3 +8,4 @@ _site/
 *.h
 mkmf.log
 .DS_Store
+.playwright-mcp/

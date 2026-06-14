@@ -1,51 +1,26 @@
-source: .
-destination: ./_site
-plugins:
-  - jekyll-feed
-  - jekyll-paginate
-  - jekyll-sitemap
-  - jekyll-github-metadata
-theme: jekyll-theme-chirpy
-
 # Site settings
 title: Richard Werkman
 description: "Blog & Portfolio of Richard Werkman"
 baseurl: "/blog"
 url: "https://richardwerkman.github.io"
 
+# Theme
+theme: jekyll-theme-chirpy
+
 # Author settings
 author:
-  name: Richard Werkman
-  url: https://github.com/richardwerkman
-  avatar: "/assets/img/avatar.png"
-  bio: "Developer & Blogger"
+   name: Richard Werkman
+   url: https://github.com/richardwerkman
+   bio: "Developer & Blogger"
+
+github:
+   username: richardwerkman
 
 # Social links
 social:
-  name: Richard Werkman
-  links:
-    - url: https://github.com/richardwerkman
-      icon: github
-    - url: mailto:richard.werkman@example.com
-      icon: envelope
-
-# Pagination
-paginate: 5
-
-# Collections
-collections:
-  posts:
-    output: true
-    permalink: /posts/:path/
-
-# Defaults
-defaults:
-  - scope:
-      path: ""
-      type: posts
-    values:
-      layout: post
-      type: blog
+   name: Richard Werkman
+   links:
+     - https://github.com/richardwerkman
 
 # Markdown settings
 markdown: kramdown
@@ -66,9 +41,3 @@ exclude:
   - README.md
   - Gemfile
   - Gemfile.lock
-
-# Theme settings
-theme_mode: light
-
-# Search
-search_visible: true
