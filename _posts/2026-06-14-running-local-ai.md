@@ -41,7 +41,7 @@ Think of a model's **full weight** as its total thinking capacity. **Active para
 - **8-bit quantization**: Better quality, needs more RAM
 - **4-bit quantization**: More compressed, faster, but slightly lower quality
 
-The quality difference is often negligible for everyday tasks, making 4-bit a sweet spot for consumer hardware. For example, a 20B parameter model might be around 80GB in full precision, but with 4-bit quantization, it can drop to around 12-16GB. This makes it feasible to run on consumer hardware like my M4 Pro. Just keep in mind that the more you quantize, the more you might lose in terms of nuance and accuracy, especially for complex tasks. With 4-bit quantization, you might see a 5% drop in performance on certain tasks, but for general coding assistance, it's often more than good enough.
+The quality difference is often negligible for everyday tasks, making 4-bit a sweet spot for consumer hardware. For example, a 35B parameter model might be around 84GB in full precision, but with 4-bit quantization, it can drop to around 18GB. This makes it feasible to run on consumer hardware like my M4 Pro. Just keep in mind that the more you quantize, the more you might lose in terms of nuance and accuracy, especially for complex tasks. With 4-bit quantization, you might see a 5% drop in performance on certain tasks, but for general coding assistance, it's often more than good enough.
 
 ### MLX vs. GGUF
 
@@ -199,5 +199,4 @@ If you're a tinkerer who enjoys the challenge of setting up and optimizing model
 
 I'll keep watching for new models and better tooling. The local AI space is evolving rapidly, and every month brings new possibilities.
 
-Have you tried running AI locally? Hit me up on [GitHub](https://github.com/richardwerkman) and share your experiences. I'd love to hear what's working (or not working) for you!
-
+Have you tried running AI locally? Leave a comment down below and share your experiences. I'd love to hear what's working (or not working) for you!
