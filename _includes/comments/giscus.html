@@ -1,16 +1,15 @@
-<script>
-  const giscus = document.createElement('script');
-  giscus.src = 'https://giscus.app/client.js';
-  giscus.async = true;
-  giscus.crossOrigin = 'anonymous';
-  giscus.setAttribute('data-repo', '{{ site.giscus.repo }}');
-  giscus.setAttribute('data-repo-id', '{{ site.giscus.repo_id }}');
-  giscus.setAttribute('data-category', '{{ site.giscus.category }}');
-  giscus.setAttribute('data-category-id', '{{ site.giscus.category_id }}');
-  giscus.setAttribute('data-mapping', '{{ site.giscus.mapping }}');
-  giscus.setAttribute('data-lang', '{{ site.giscus.lang }}');
-  giscus.setAttribute('data-reactions-enabled', '{{ site.giscus.reactions_enabled }}');
-  giscus.setAttribute('data-emit-metadata', '{{ site.giscus.emit_metadata }}');
-  giscus.setAttribute('data-theme', '{{ site.giscus.theme }}');
-  document.head.appendChild(giscus);
+<script
+  src="https://giscus.app/client.js"
+  data-repo="{{ site.giscus.repo }}"
+  data-repo-id="{{ site.giscus.repo_id }}"
+  data-category="{{ site.giscus.category }}"
+  data-category-id="{{ site.giscus.category_id }}"
+  data-mapping="{{ site.giscus.mapping }}"
+  data-reactions-enabled="{{ site.giscus.reactions_enabled }}"
+  data-emit-metadata="{{ site.giscus.emit_metadata }}"
+  data-input-position="{{ site.giscus.input_position }}"
+  theme="{{ site.giscus.theme }}"
+  lang="{{ site.giscus.lang }}"
+  crossorigin="anonymous"
+  async>
 </script>
