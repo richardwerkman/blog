@@ -134,11 +134,13 @@ That's it! Copilot will now use your local model in the chat. It's a bit of a se
 
 One thing I noticed was that whenever I started a new prompt, the model would take a moment to "warm up" before generating an initial response. This is because Copilot sends a large system prompt to the model to set the context for the coding task. The model needs to process this system prompt before it can generate a response, which can take a few seconds, especially with larger models. Once the initial response is generated, subsequent interactions are much faster since the model is already "warmed up" and has the context in memory. This is something to keep in mind when using local models with Copilot. You might experience a slight delay on the first response, but it should speed up after that.
 
-![image: Copilot with Local Model](/assets/img/posts/running-local-ai/ghcopilot.gif)
+![image: Copilot with Local Model getting stuck](/assets/img/posts/running-local-ai/ghcopilot.gif)
 
 After some initial successes, I did notice that some models, but mainly Gemma-4, struggled with tool-calling. They often failed to execute a prompt in the terminal or modify a file. At first I thought it was an issue with the model, but it turned out to be a combination of the model's capabilities and how Copilot interacts with it. Some models just aren't as good at understanding when to call tools or how to structure their responses for tool-calling. This is a crucial aspect of the agent experience, and it's something to keep in mind when choosing a model for local AI. However, with all models I had some issues with tool calling. So I figured it might be more an issue with Copilot's implementation of tool calling rather than the models themselves. I hope future updates to Copilot will improve this aspect, especially for local models.
 
 Another issue I encountered was that some models would get stuck in "thinking loops" where they would keep generating output without actually producing a useful response. This was particularly common with MoE models like Qwen3.6-35B-A3B. It seems that when the model encounters a situation it doesn't know how to handle, it can get stuck in a loop of generating output without making progress. Adjusting the temperature and repetition penalty settings helped mitigate this issue, but it was still a frustrating experience at times.
+
+![image: Copilot Retry button](/assets/img/posts/running-local-ai/retry.png)
 
 Finally, I encountered so many issues with tool calling that the retry button in Copilot became a frequent sight. At that point, I realized I needed to try some other tools to see if Copilot was the issue.
 
