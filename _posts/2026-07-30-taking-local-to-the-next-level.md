@@ -2,34 +2,14 @@
 title: "My Journey Running AI Locally: Taking Local to the Next Level"
 date: 2026-07-30 10:00:00 +0000
 categories: [AI, Local AI, Machine Learning]
-tags: [local-ai, llm, vllm, lm-studio, m4-pro, dell-max-pro, mtp, speculative-decoding]
+tags: [local-ai, llm, mlx, mlx-studio, mtplx, lm-studio, m4-pro, mtp, speculative-decoding, prefix-caching, rtk, thinkingcap, dell-max-pro]
 layout: post
 comments: true
 ---
 
 After weeks of experimenting with running AI models locally on my MacBook Pro I can share some more of my experiences and insights. I have enjoyed my setup a lot! I could for example keep working in the train without a stable internet connection! That felt like freedom. But I was curious, how far can I take this? How far can I push my local setup? Can I run even larger models locally? Can I run models that are more capable than Qwen3.6-35B-A3B? Let's find out!
 
-Outline:
-experimented with current setup, MTP, prefix-caching
-Not available for MLX models in llama.cpp (and thus LM Studio)
-MLX studio promises to support all this, but it crashes often on my M4 Pro due to memory usage spikes
-
-Instead I decided to focus on getting the best performance out of my current setup. Using less tokens increases speed a lot, since 11 tokens per seconds is the max I can get.
-With RTK and ThinkingCap I can get a lot more done with less tokens. I have been experimenting with different models and found that Qwen3.6-27b-ThinkingCap is the best model for my hardware.
-
-Outcome:
-- Qwen3.6-35B-A3B is the best model for easy tasks.
-- Qwen3.6-27b-ThinkingCap is the best model for my hardware, with some tweaks.
-
-Next up:
-I'm experimenting with a Dell Max Pro GB10 server to see if I can run even larger models and improve performance. Stay tuned for my next post where I will share my findings and insights from this new setup.
-
-PART 2:
-vllm is dificult to set up. I couldn't get it to work on my Dell Max Pro GB10 server. A lot of errors. In the end I decided to use LM Studio on the server as well. I can run larger models on the server, but the performance is not as good as I hoped. GPT-OSS-120B and Laguna-S-2.1 seem less capable than Qwen3.6-27B-ThinkingCap. I will continue to experiment with different models and setups to see if I can improve performance and capabilities. 
-
-So, is the GB10 server worth it? For now, I think the answer is no. The performance and capabilities of the models I can run on the server are not significantly better than what I can achieve with my M4 Pro. Mainly because in the 120b parameters class there are no new models.
-
-## The Setup
+## The Setup, Revisited
 
 Like described in my previous post my setup consists of:
 1. **LM Studio** for model management and JIT loading of models
@@ -38,117 +18,145 @@ Like described in my previous post my setup consists of:
 4. **MLX optimization** for maximum performance on my M4 Pro
 5. **Open Code** as the agent harness, for smooth integration and execution of tasks
 
-What have I used this setup for? I have used it for a variety of tasks, including:
+I've put this setup to work on a bunch of real tasks:
 - Creating this blog site
 - Adding [simple features](https://github.com/stryker-mutator/stryker-net/pull/3670) to Stryker.NET
 - Generating unit tests for straightforward functions
 - Answering technical questions and explaining code
 
-While it worked great on those simple tasks, for more complex tasks I have found that Qwen3.6-35B-A3B is not capable. Some examples of tasks that are too complex for this model include:
-- Resolving merge conflicts in large codebases with many interdependent files
-- Generating slide decks with visualizations and data
-- Implementing complex features in Stryker.NET
-- Debugging subtle, hard-to-reproduce bugs across multiple layers
+Qwen3.6-35B-A3B breezes through all of that. But for the harder stuff, resolving merge conflicts across dozens of interdependent files, implementing non-trivial features in Stryker.NET, chasing subtle bugs across multiple layers, I have to reach for Qwen3.6-27B, its full-weight, non-MoE sibling. It's noticeably more capable, but it's also painfully slow: about 11 tokens per second on my hardware, best case. That's the itch I spent this past month scratching. Can I get more speed out of this model without buying new hardware?
 
-Some other downsides of this setup include:
-- **Long Load Times**: While the tokens per second are impressive, the initial load time can be minutes, which is not ideal for quick tasks.
-- **Battery Life**: Running large models locally can be power-intensive, leading to shorter battery life on laptops and can be hot on your lap.
+### How Do They Stack Up Against Claude?
 
-I wanted to know if I could solve these issues by some smarter software optimizations. I have been researching and experimenting with different approaches, and I have found some interesting insights that I want to share in this post.
+Since I keep leaning on these two models, I wanted a sense of where they actually sit on the capability ladder compared to the (previous) frontier models I'd otherwise be paying per-token for. Here's how the public benchmarks line up:
 
-## How LLMs Work
+| Benchmark | Qwen3.6-35B-A3B | Qwen3.6-27B | Claude Sonnet 4.6 | Claude Sonnet 5 | Claude Opus 4.6 | Claude Fable 5 |
+|---|---|---|---|---|---|---|
+| SWE-bench Verified | 73.4% | 77.2% | 79.6% | 82.1% | 80.8% | 95% |
+| GPQA Diamond | 86.0%* | 87.8%* | 70.8% | — | — | 88.5% |
+| MMLU-Pro | 85.2 | 86.2 | 75.6 | 86.8 | 77.3 | 91.2 |
+| Terminal-Bench 2.0 | 24.6% | 59.3% | 59.1% | 76.1% | 65.8% | 88.0% |
 
-Before diving into hardware limits, it helps to understand what actually happens when you send a prompt to an LLM. Why can it take minutes before you see a response? Inference happens in two distinct phases, each with very different hardware requirements.
+\* Qwen's GPQA Diamond numbers come from their own reported figures; independent third-party reproductions are still limited, so I'd take these with a grain of salt.
 
-### Prefill (Prompt Processing)
+Anthropic didn't publish GPQA Diamond or MMLU-Pro scores at Sonnet 5's launch, hence the dashes, but its Terminal-Bench jump (up more than 20 points over Sonnet 4.6) is the single biggest move on this whole table.
 
-When you send a prompt, the model first processes the entire input in the **prefill** phase. All tokens in your prompt are processed in parallel through the network's layers. The model computes attention scores between all token pairs and builds the KV cache, a memory structure that stores the contextual understanding of every token for use during generation.
+A few things jump out. Qwen3.6-27B comes very close to Claude Sonnet 4.6 on SWE-bench Verified and within striking distance of Claude Opus 4.6, all while running fully offline on a laptop. Qwen3.6-35B-A3B, despite using only 3B active parameters per token, surprisingly even beats the Sonnet and Opus models on MMLU-Pro. Claude Sonnet 5 is an interesting case: its SWE-bench Verified score actually sits closer to my local models than to Opus 4.6, but its Terminal-Bench score blows past everything except Fable 5, suggesting it's been tuned hard for agentic, multi-step work rather than raw benchmark-maxing. And then there's Claude Fable 5, included here purely as the "what does the actual frontier look like" reference point: it clears every other model on the table by a wide margin, a reminder of just how much headroom is still left above anything I can run on a laptop. Anthropic's models still pull ahead on broader reasoning benchmarks like GPQA and Humanity's Last Exam, but for day-to-day coding tasks, the gap between "local" and "frontier API" has gotten a lot smaller than I expected, Fable 5 notwithstanding.
 
-Prefill is **compute-bound**. The heavy matrix multiplications across all layers dominate, and the GPU's raw TFLOPS determine how quickly the prompt is processed. More compute means faster prompt understanding. For short prompts this phase is nearly instantaneous, but for long contexts (tens of thousands of tokens) it can take noticeable time. The key hardware specs here are:
+## Why Only 11 Tokens Per Second?
 
-- **GPU Compute (TFLOPS)**: Raw floating-point throughput drives matrix multiplication speed
-- **VRAM/Capacity**: The entire prompt plus the KV cache must fit in memory
+Before chasing optimizations, I wanted to actually understand where that ceiling comes from. Inference happens in two distinct phases, and they have very different bottlenecks.
 
-When running large models like Qwen3.6-27B, the prefill phase can take a long time on my M4 Pro. Processing the system prompt in OpenCode takes a few seconds. But when I send a prompt as a continuation on a 200k token conversation, the prefill phase can take minutes. This is because the model has to process all 200k tokens to build the KV Cache, which is a lot of compute.
+### Prefill: Reading Your Prompt
 
-### Decode (Token Generation)
+When you send a prompt, the model processes the whole thing at once in the **prefill** phase, computing attention across all tokens and building the KV cache. This phase is **compute-bound**: it's dominated by matrix multiplications, so raw GPU TFLOPS decide how fast it goes. For a short prompt this is basically instant. For a 200k-token conversation, it can take minutes, because the model has to re-process every single one of those tokens before it can start responding.
 
-After prefill, the model enters the **decode** phase, generating the response one token at a time. This is the autoregressive nature of LLMs: each new token depends on all previous tokens. For every single token, the model must:
+### Decode: Generating the Response
 
-1. Read the full set of model weights from memory
-2. Compute attention against the existing KV cache
-3. Produce a probability distribution over the vocabulary
-4. Sample the next token
-5. Append it to the KV cache and repeat
+After prefill, the model enters **decode**, generating one token at a time. For every single token it has to read the entire set of model weights from memory, run them against the KV cache, and sample the next token. This phase is **memory-bandwidth-bound**: the GPU can sit there with idle compute while the memory bus works flat out just to stream the weights through.
 
-Decode is **memory-bandwidth-bound**. The bottleneck isn't how fast the GPU can compute — it's how fast weights can be streamed from memory. For each token, the entire model (billions of parameters) must be read from memory. On a 35B parameter model in 4-bit quantization, that's roughly 17.5 GB read per token. At 200 GB/s bandwidth, you're looking at a theoretical ceiling of roughly 11 tokens per second, regardless of how much compute you have.
+Here's the math for my machine. My M4 Pro has 273 GB/s of memory bandwidth. Qwen3.6-27B at 4-bit quantization weighs in at roughly 16 GB. Divide the two and you get a theoretical ceiling of about 17 tokens per second, if you could somehow use every last byte of that bandwidth on nothing but weight-streaming.
 
-This is why memory bandwidth is the single most important spec for local LLM performance. You can have teraflops of compute sitting idle while the memory bus is maxed out streaming weights. The key hardware specs for decode are:
+In practice I measure about 11 tokens per second, roughly 65% of that theoretical peak. That gap isn't a bug, it's normal. A few things eat into it:
+- Decoding one token at a time means tiny, bursty memory reads instead of one big sequential stream, and memory controllers just don't sustain their rated peak bandwidth under that access pattern
+- The unified memory bus is shared with the OS, the display, and whatever else is running in the background
+- Every step also has to read the growing KV cache, not just the static weights, and that overhead adds up in long conversations
 
-- **Memory Bandwidth (GB/s)**: The dominant factor — directly limits tokens/second
-- **Memory Capacity (GB)**: Determines which models you can run at all
-- **Compute (TFLOPS)**: Secondary — only matters once bandwidth is no longer the bottleneck
+So: memory bandwidth sets the ceiling, and real-world overhead knocks you down to somewhere around two-thirds of it. That's why I get 11 tokens per second out of Qwen3.6-27B, and why throwing more compute at the problem wouldn't help at all. I needed a different lever.
 
-### Why This Matters
+## Chasing More Speed: MTP and Prefix Caching
 
-Understanding these two phases explains a lot about the local AI experience. When you paste a long document and hit enter, there's a pause (prefill), then tokens start streaming (decode). If tokens feel slow, it's almost always a memory bandwidth issue, not a compute issue. And it explains why throwing more compute at the problem often yields diminishing returns. For tokens per second the bottleneck is memory bandwidth, not compute power.
+If decode is bandwidth-bound, the only way to go faster without new hardware is to get more useful tokens out of each expensive pass over the weights. Two techniques promise exactly that.
 
-## Software Optimizations
+### Prefix Caching
 
-There are a few optimizations that can help squeeze more performance out of local LLMs.
+During prefill, the model builds a KV cache from your prompt. If your agent harness sends the same system prompt every time (and mine does, every message in Open Code starts the same way), there's no reason to recompute that part of the KV cache from scratch. **Prefix caching** reuses it. This matters most for long-running conversations: without it, continuing a 200k-token conversation means reprocessing all 200k tokens before you see a single new token. LM Studio, running on llama.cpp, does not currently support this for MLX models. Every message pays the full prefill cost again.
 
-### Prompt caching
+### Multi Token Prediction (MTP)
 
-During prefill, the model computes attention scores between all tokens in the prompt. If you send the same prompt multiple times, the model can cache the KV cache for that prompt and skip re-computation. This is especially useful when using an agent harness that always sends the same system prompt. LM Studio does not currently support prompt caching. This is why the prefill phase can feel slow when using LM Studio, even for repeated prompts.
+**Multi Token Prediction**, also known as speculative decoding, tries to squeeze more than one token out of each expensive weight-read. A draft mechanism proposes several candidate tokens, and the target model verifies all of them in a single forward pass. Since that verification pass reads the weights once but can validate K tokens at a time, an accepted batch of tokens costs roughly the same memory traffic as generating one token normally. The catch is the acceptance rate: how often the draft's guesses match what the full model would have picked. High acceptance (>80%) gets you close to a K× speedup; low acceptance and the overhead isn't worth it.
 
-This will be especially important for long-running conversations. If you have a 200k token conversation and you want to continue it, the model has to re-process all 200k tokens to build the KV cache. With prompt caching, the model could skip this step and start generating immediately.
+The kicker: MTP isn't supported for MLX models in llama.cpp, and therefore not in LM Studio either. To use it at all you need GGUF, which on my M4 Pro is already slower out of the gate. I tested Qwen3.6-27B in GGUF with MTP enabled and the numbers didn't add up: prefill actually took longer, and decode landed at about the same speed as plain MLX without MTP. Not worth the trade-off.
 
-### Multi Token Prediction
+So I went looking for a way to get MTP without giving up MLX.
 
-If decode is memory-bandwidth-bound, is there any way to get more tokens per second without upgrading hardware? Enter **Multi Token Prediction** (MTP), also known as speculative decoding or speculative sampling.
+## LM Studio alternatives
 
-The core insight behind MTP is simple but powerful: instead of generating one token at a time, generate several candidate tokens in parallel, then verify them all in one pass.
+This month I tried two new tools that promise to bring MTP and other enhancements to MLX models: **MLX Studio** and **MTPLX**. Here's how they stack up against LM Studio:
 
-Here's the process:
-1. A small **draft model** (or a distilled version of the target model) quickly proposes K candidate tokens
-2. The **target model** verifies all K tokens in a single forward pass
-3. Accepted tokens are appended; if any token is rejected, generation continues from the last accepted token
+| Tool | Pros | Cons | Tps Qwen-27b | Verdict |
+|------|------|------|--------------|---------|
+| **LM Studio** | Rock solid, clean UI, JIT loading | No prefix caching, no MTP for MLX | 11 | Still my daily driver |
+| **MLX Studio (vMLX)** | Prefix caching + MTP built in, chat/code/image-gen in one app | LLMs crash often from memory spikes | 15 | Promising, not stable enough yet |
+| **MTPLX** | No second draft model needed, uses native MTP heads. Promises 2x speed. | Whole system crashed repeatedly | 25 | Not usable for me right now |
 
-The magic is in step 2. Because the target model processes all K candidates in one pass (using the same memory read of the full model weights), you get up to K tokens for the cost of roughly one decode step. If the draft model is accurate, you can approach K× speedup. 
+### MLX Studio
 
-The actual speedup depends on the **acceptance rate**. This is how often the draft model's guesses match what the target model would have chosen. In practice:
+This month a tool called **MLX Studio** landed on my radar, an all-in-one macOS app built on top of an inference engine called **vMLX**. On paper it's exactly what I've been missing: a five-layer caching system (prefix caching, paged KV cache, quantized caching, continuous batching, and disk caching) plus native speculative decoding, no need to give up MLX or switch to GGUF.
 
-- **High acceptance** (>80%): You get close to the theoretical K× speedup. With K=6, that's nearly 6 times the tokens per second.
-- **Moderate acceptance** (50-80%): Still meaningful speedup, typically 2-3 times the tokens per second.
-- **Low acceptance** (<50%): The overhead of running the draft model may not be worth it
+I loaded Qwen3.6-27B into MLX Studio to finally break past 11 tokens per second! I got to 15 tokens per second. However, I watched memory usage spike and the app crash mid-response, more than once. The UI itself is decent, not quite as polished as LM Studio, but perfectly usable, and the feature set (chat, code, image generation, a pile of agentic tools) is genuinely impressive on paper. It can even quantize or convert GGUF models to MLX format for you. It just isn't stable enough for me to trust with real work yet.
 
-Acceptance rate depends heavily on the relationship between draft and target models. Models trained with native MTP (like DeepSeek v3 and Qwen3) have built-in draft heads that achieve 60-80% acceptance, making them ideal candidates. For unrelated model pairs, acceptance can drop significantly.
+![MLX Studio](/assets/img/posts/taking-local-to-the-next-level/mlx-studio.png)
 
-The kicker? MTP is not available for MLX format models. MLX is optimized for single-token decode, and the draft model approach doesn't fit into its architecture. If you want to use MTP, you need to run models in GGUF formats. If I want to utalize the power of MTP, I have to switch to GGUF which is a lot slower on my M4 Pro. I tested this with Qwen3.6-35B-A3B in GGUF format and the speedup was not as good as I hoped. The prefill phase took longer than without MTP and the decode phase was about as fast as MLX without MTP. The trade-off isn't worth it.
+*MLX Studio seems promising, but not stable enough yet.*
 
-I found a tool that makes MTP available for MLX models: [MTPLX](https://www.mtplx.com/). It promises to bring the benefits of MTP to MLX models, but I found it to be buggy and unreliable. It crashed my MacBook multiple times. I will keep an eye on this project, but for now, MTP is not a viable option for my local setup.
+### MTPLX
 
-### Reaching the limits
+I also separately tried **MTPLX**, a standalone tool that injects MTP specifically into MLX models. What's clever about it is that it doesn't need a separate draft model at all, it uses the target model's own built-in MTP heads to draft candidate tokens, which keeps your full memory budget free for the actual model. When selecting a model it takes a while to "optimize" it. When it finally loaded it gave me an impressive 25 tokens per second!
 
-I came to the conclusion that I have reached the limits of what I can do with my hardware with current software. Hopefully llama.ccp (and thus LM Studio) will support MTP with MLX and prompt caching in the future, but for now, I have to look for other ways to improve performance. I have reached the limits of what I can do with my current setup. 
+![MTPLX](/assets/img/posts/taking-local-to-the-next-level/mtplx.png)
 
-## Hosting a server
+*MTPLX has a polished UI, clearly focussed on performance.*
 
-So what is the next step? I got my hands on a Dell Max Pro GB10 (thanks Willem!), a server that I can use to host my AI models. The Dell Max Pro GB10 is equipped with more powerful hardware than my MacBook Pro:
+But in practical use MTPLX fared no better: it crashed my Mac outright a couple of times while testing MTP against Qwen3.6-27B, which makes it a non-starter for me.
 
-| Spec | M4 Pro (MacBook Pro) | Dell MAX Pro GB10 |
-|------|---------------------|-------------------|
-| CPU | 14-core Arm | 20-core Arm|
-| GPU | 20-core integrated Apple GPU | NVIDIA Blackwell GB10 (6144 CUDA Cores) |
-| NPU | 16-core Neural Engine, 38 TOPS | - |
-| System Memory | 48 GB unified | 128 GB unified |
-| Memory Bandwidth | 273 GB/s | 273  GB/s |
-| FP16/BF16 Compute | 13 TFLOPS | 30 TFLOPS |
-| Form Factor | 16" laptop, portable | mini pc, less portable |
-| Power | ~66W TDP | 140W TDP |
+My conclusion for now: LM Studio with MLX remains the most reliable way to run models locally on my Mac. I'll keep an eye on both MLX Studio and MTPLX. Once they become more stable, I expect them to provide a meaningful jump in tokens per second on the exact same hardware.
 
-The main advantage of the Dell MAX Pro GB10 is its ability to run larger models with more parameters, which can lead to better performance and more accurate results. The server's powerful GPU allows for faster prefill, but the memory bandwidth is still a limiting factor. The Dell MAX Pro GB10 has exactly the same memory bandwidth as the M4 Pro, which means that while it can handle larger models, it may still face bottlenecks when generating tokens. However, the increased compute power and memory capacity of the Dell MAX Pro GB10 make it a great choice for hosting AI models.
+## Doing More With Less: RTK and ThinkingCap
 
-## Coming up
+If I can't push past that ~11 tokens/second hardware ceiling right now, the next best lever isn't speed, it's needing fewer tokens in the first place. That's where I've actually made the most progress this month.
 
-The coming weeks I will be setting up vLLM on the Dell MAX Pro server and comparing it to my local setup. I will be running a variety of models, to see how they perform in terms of speed, accuracy, and resource usage. I will also be experimenting with different use cases for these models. Let's see how far I can push the limits of local AI and what new capabilities I can unlock with a server-based setup. Stay tuned for more insights and findings in my next post!
+**RTK (Rust Token Killer)** is a CLI proxy I've wired into Open Code via a hook. It transparently rewrites everyday dev commands, `git status` becomes `rtk git status` behind the scenes, before their output reaches the model, filtering out the noise the model doesn't actually need. It claims 60-90% savings on typical dev operations, and from what I can tell in practice, that's roughly right. Since it's hook-based, it costs me nothing to use, it just works in the background.
+
+**ThinkingCap-Qwen3.6-27B**, a [fine-tune of Qwen3.6-27B](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B) from BottleCap AI, attacks the problem from a different angle: reasoning tokens. It's trained with reinforcement learning to spend its thinking budget more strategically, cutting thinking-token usage by about half on average while holding onto the base model's accuracy. On GPQA-Diamond, for example, it dropped from 10,777 to 3,351 thinking tokens (a 67.8% reduction) while staying above 85% accuracy.
+
+I swapped my plain Qwen3.6-27B for Qwen3.6-27B-ThinkingCap and paired it with RTK. The tokens-per-second number in the corner hasn't moved, it's still around 11. But since each task now burns through far fewer thinking tokens, and RTK strips a chunk of tool-output tokens before they ever reach the model, the effective time to a useful result dropped substantially. Tasks that used to mean staring at a spinner while the model churned through pages of reasoning now resolve noticeably faster in wall-clock time, even on the same hardware at the same raw speed.
+
+## Going Extreme: Ternary Bonsai 27B
+
+While I was settling into the ThinkingCap workflow, I got curious how much further quantization could go. My usual MLX setup runs Qwen3.6-27B at 4-bit, about 16 GB. [**Ternary Bonsai 27B**](https://huggingface.co/prism-ml/Ternary-Bonsai-27B-gguf) from PrismML pushes it down to ternary weights, an average of just 1.71 effective bits per weight, shrinking the same model to roughly 5.9 GB.
+
+That's a massive drop in RAM usage for what's still, on paper, the same 27B model underneath. The question is how much intelligence you give up for it. PrismML ran it against a 15-benchmark suite covering knowledge, reasoning, math, coding, tool use, and vision, and it holds up better than I expected almost everywhere, except one category:
+
+| Benchmark category | Qwen3.6-27B (full weight) | Qwen3.6-27B-ThinkingCap | Ternary Bonsai 27B (q2, ~1.71 bpw) |
+|---|---|---|---|
+| Overall average (15-bench suite) | 85.0 | ~85.0 | 80.5 (95% retention) |
+| Math | ~95 | ~95 | 93.4 |
+| Coding | ~90 | ~90 | 86.0 |
+| Agentic tool use | 80.0 | ~80.0 | 74.0 |
+
+Math and coding barely move. Agentic tool use takes the biggest hit by far, a 7.5% relative drop compared to math's roughly 2%, which turned out to be exactly the category that matters most for how I actually use this model.
+
+My first attempt at running it didn't even get that far: LM Studio flat out refused to load the ternary GGUF, no error message, just a model that never finished loading. A recent LM Studio update fixed that, and once it loaded, the speed difference was immediately obvious: **~25 tokens per second**, more than double my usual 11 tokens/second on the 4-bit version. That tracks with the memory-bandwidth math from earlier: at 5.9 GB instead of 16 GB, the theoretical ceiling on my M4 Pro jumps to roughly 46 tokens/second, and 25 tokens/second is in the same ballpark once you apply the same real-world overhead I measured before, maybe even a bit less efficient, likely because ternary matrix kernels aren't as optimized yet as regular 4-bit ones.
+
+Then I pointed Open Code at it, and it fell apart immediately:
+
+![Ternary Bonsai 27B crashing in Open Code](/assets/img/posts/taking-local-to-the-next-level/ternary-bonsai-opencode.png)
+
+*Ternary Bonsai 27B crashing in Open Code before it can produce a single token of output.*
+
+It started "thinking," and then crashed outright, exit code null, no useful error message, before returning a single token of response. Given that agentic tool use is exactly the benchmark category that degrades the most under this quantization, this doesn't feel like a coincidence. Open Code's system prompt and tool-calling format are demanding, and it seems ternary Bonsai just can't hold onto that structure reliably. Hopefully future updates to LM Studio, Open Code, or the model itself will improve that, but for now, it's not a viable option for me.
+
+## Conclusion
+
+For now, I'll stick with Qwen3.6-27B-ThinkingCap for anything that goes through Open Code. But if you're on a Mac with less than 48 GB of unified memory, Ternary Bonsai 27B is well worth experimenting with. Just don't expect it to survive a serious agentic coding session yet.
+
+My local setup:
+
+- **LM Studio** still the best choice for model management and JIT loading of models, but promising alternatives are on the horizon
+- **Qwen3.6-35B-A3B** is the best choice for easy tasks.
+- **Qwen3.6-27B-ThinkingCap**, paired with RTK, is now my daily driver for complex tasks: same 11 tokens/second ceiling as the plain model, but a noticeably smoother, faster-feeling experience thanks to fewer wasted tokens.
+
+## Next Up
+
+I recently got my hands on a Dell Max Pro GB10 server (thanks Willem!) to see if I can run larger, more capable models and finally break past what my M4 Pro can do. Stay tuned for my next post, where I'll share how that experiment went.
