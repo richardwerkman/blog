@@ -12,19 +12,19 @@ After weeks of experimenting with running AI models locally on my MacBook Pro I 
 ## The Setup, Revisited
 
 Like described in my previous post my setup consists of:
+
 1. **LM Studio** for model management and JIT loading of models
 2. **Qwen3.6-35B-A3B** for fast, capable responses, vision capabilities, and excellent tool-calling
-3. **Qwen3.6-27B** for more complex tasks that require more reasoning and understanding of code (but a lot slower than Qwen3.6-35B-A3B)
 4. **MLX optimization** for maximum performance on my M4 Pro
 5. **Open Code** as the agent harness, for smooth integration and execution of tasks
 
-I've put this setup to work on a bunch of real tasks:
+I've put this setup to work on a bunch of real world tasks:
 - Creating this blog site
 - Adding [simple features](https://github.com/stryker-mutator/stryker-net/pull/3670) to Stryker.NET
 - Generating unit tests for straightforward functions
 - Answering technical questions and explaining code
 
-Qwen3.6-35B-A3B breezes through all of that. But for the harder stuff, resolving merge conflicts across dozens of interdependent files, implementing non-trivial features in Stryker.NET, chasing subtle bugs across multiple layers, I have to reach for Qwen3.6-27B, its full-weight, non-MoE sibling. It's noticeably more capable, but it's also painfully slow: about 11 tokens per second on my hardware, best case. That's the itch I spent this past month scratching. Can I get more speed out of this model without buying new hardware?
+Qwen3.6-35B-A3B breezes through all of that. But for the harder stuff, generating visual slide decks, resolving complex merge conflicts, implementing non-trivial features in Stryker.NET, chasing subtle bugs across multiple layers, I have to reach for Qwen3.6-27B, its full-weight, non-MoE sibling. It's noticeably more capable, but it's also painfully slow: about 11 tokens per second on my hardware, best case. That's the itch I spent this past month scratching. Can I get more speed out of this model without buying new hardware?
 
 ### How Do They Stack Up Against Claude?
 
@@ -37,11 +37,9 @@ Since I keep leaning on these two models, I wanted a sense of where they actuall
 | MMLU-Pro | 85.2 | 86.2 | 75.6 | 86.8 | 77.3 | 91.2 |
 | Terminal-Bench 2.0 | 24.6% | 59.3% | 59.1% | 76.1% | 65.8% | 88.0% |
 
-\* Qwen's GPQA Diamond numbers come from their own reported figures; independent third-party reproductions are still limited, so I'd take these with a grain of salt.
+\* Qwen's GPQA Diamond numbers come from their own reported figures; independent third-party reproductions are still missing, so I'd take these with a grain of salt.
 
-Anthropic didn't publish GPQA Diamond or MMLU-Pro scores at Sonnet 5's launch, hence the dashes, but its Terminal-Bench jump (up more than 20 points over Sonnet 4.6) is the single biggest move on this whole table.
-
-A few things jump out. Qwen3.6-27B comes very close to Claude Sonnet 4.6 on SWE-bench Verified and within striking distance of Claude Opus 4.6, all while running fully offline on a laptop. Qwen3.6-35B-A3B, despite using only 3B active parameters per token, surprisingly even beats the Sonnet and Opus models on MMLU-Pro. Claude Sonnet 5 is an interesting case: its SWE-bench Verified score actually sits closer to my local models than to Opus 4.6, but its Terminal-Bench score blows past everything except Fable 5, suggesting it's been tuned hard for agentic, multi-step work rather than raw benchmark-maxing. And then there's Claude Fable 5, included here purely as the "what does the actual frontier look like" reference point: it clears every other model on the table by a wide margin, a reminder of just how much headroom is still left above anything I can run on a laptop. Anthropic's models still pull ahead on broader reasoning benchmarks like GPQA and Humanity's Last Exam, but for day-to-day coding tasks, the gap between "local" and "frontier API" has gotten a lot smaller than I expected, Fable 5 notwithstanding.
+A few things jump out. Qwen3.6-27B comes very close to Claude Sonnet 4.6 on SWE-bench Verified and within striking distance of Claude Opus 4.6, all while running fully offline on a laptop. Qwen3.6-35B-A3B, despite using only 3B active parameters per token, surprisingly even beats the Sonnet and Opus models on MMLU-Pro. The Qwen models are clearly competitive with the frontier models of the past, but they are still a step behind the current frontier, Claude 5 family. That said, the Qwen models are fully offline, and the cost of running them is zero once you have the hardware. For me, that makes them a compelling choice for local AI work. It is also worth noting that the Qwen models are still actively being released, so maybe the new Qwen3.8 models will close the gap to Claude 5.
 
 ## Why Only 11 Tokens Per Second?
 
@@ -55,14 +53,14 @@ When you send a prompt, the model processes the whole thing at once in the **pre
 
 After prefill, the model enters **decode**, generating one token at a time. For every single token it has to read the entire set of model weights from memory, run them against the KV cache, and sample the next token. This phase is **memory-bandwidth-bound**: the GPU can sit there with idle compute while the memory bus works flat out just to stream the weights through.
 
-Here's the math for my machine. My M4 Pro has 273 GB/s of memory bandwidth. Qwen3.6-27B at 4-bit quantization weighs in at roughly 16 GB. Divide the two and you get a theoretical ceiling of about 17 tokens per second, if you could somehow use every last byte of that bandwidth on nothing but weight-streaming.
+Here's the math for my machine. My M4 Pro has 273 GB/s of memory bandwidth. Qwen3.6-27B at 4-bit quantization weighs in at roughly 16 GB. Add the KV cache to that and you get the total memory footprint. Divide the two and you get a theoretical ceiling of about 17 tokens per second, if you could somehow use every last byte of that bandwidth on nothing but weight-streaming.
 
 In practice I measure about 11 tokens per second, roughly 65% of that theoretical peak. That gap isn't a bug, it's normal. A few things eat into it:
 - Decoding one token at a time means tiny, bursty memory reads instead of one big sequential stream, and memory controllers just don't sustain their rated peak bandwidth under that access pattern
 - The unified memory bus is shared with the OS, the display, and whatever else is running in the background
 - Every step also has to read the growing KV cache, not just the static weights, and that overhead adds up in long conversations
 
-So: memory bandwidth sets the ceiling, and real-world overhead knocks you down to somewhere around two-thirds of it. That's why I get 11 tokens per second out of Qwen3.6-27B, and why throwing more compute at the problem wouldn't help at all. I needed a different lever.
+That also explains why Qwen3.6-35B-A3B, which is only 3B active parameters per token, runs at about 70 tokens per second: only 3B of weights need to be streamed, so the memory bandwidth ceiling is much higher.
 
 ## Chasing More Speed: MTP and Prefix Caching
 
@@ -70,11 +68,11 @@ If decode is bandwidth-bound, the only way to go faster without new hardware is 
 
 ### Prefix Caching
 
-During prefill, the model builds a KV cache from your prompt. If your agent harness sends the same system prompt every time (and mine does, every message in Open Code starts the same way), there's no reason to recompute that part of the KV cache from scratch. **Prefix caching** reuses it. This matters most for long-running conversations: without it, continuing a 200k-token conversation means reprocessing all 200k tokens before you see a single new token. LM Studio, running on llama.cpp, does not currently support this for MLX models. Every message pays the full prefill cost again.
+During prefill, the model builds a KV cache from your prompt. If your agent harness sends the same system prompt every time (and mine does, every message in Open Code starts the same way), there's no reason to recompute that part of the KV cache from scratch. **Prefix caching** reuses it. This matters most for long-running conversations: without it, continuing a 200k-token conversation means reprocessing all 200k tokens before you see a single new token. LM Studio, running on llama.cpp, does not currently support this for MLX models. Every message pays the full prefill cost again. I've opened a [feature request](https://github.com/lmstudio-ai/mlx-engine/issues/354) for it, give it a thumbs up if you want to see it implemented!
 
 ### Multi Token Prediction (MTP)
 
-**Multi Token Prediction**, also known as speculative decoding, tries to squeeze more than one token out of each expensive weight-read. A draft mechanism proposes several candidate tokens, and the target model verifies all of them in a single forward pass. Since that verification pass reads the weights once but can validate K tokens at a time, an accepted batch of tokens costs roughly the same memory traffic as generating one token normally. The catch is the acceptance rate: how often the draft's guesses match what the full model would have picked. High acceptance (>80%) gets you close to a K× speedup; low acceptance and the overhead isn't worth it.
+**Multi Token Prediction**, also known as speculative decoding, tries to squeeze more than one token out of each expensive weight-read. A draft mechanism proposes several candidate tokens, and the target model verifies all of them in a single forward pass. Since that verification pass reads the weights once but can validate N tokens at a time, an accepted batch of tokens costs roughly the same memory traffic as generating one token normally. The catch is the acceptance rate: how often the draft's guesses match what the full model would have picked. High acceptance (>80%) gets you close to a N× speedup; low acceptance and the overhead isn't worth it.
 
 The kicker: MTP isn't supported for MLX models in llama.cpp, and therefore not in LM Studio either. To use it at all you need GGUF, which on my M4 Pro is already slower out of the gate. I tested Qwen3.6-27B in GGUF with MTP enabled and the numbers didn't add up: prefill actually took longer, and decode landed at about the same speed as plain MLX without MTP. Not worth the trade-off.
 
@@ -110,7 +108,7 @@ I also separately tried **MTPLX**, a standalone tool that injects MTP specifical
 
 But in practical use MTPLX fared no better: it crashed my Mac outright a couple of times while testing MTP against Qwen3.6-27B, which makes it a non-starter for me.
 
-My conclusion for now: LM Studio with MLX remains the most reliable way to run models locally on my Mac. I'll keep an eye on both MLX Studio and MTPLX. Once they become more stable, I expect them to provide a meaningful jump in tokens per second on the exact same hardware.
+My conclusion for now: LM Studio with MLX remains the most reliable way to run models locally on my Mac. I'll keep an eye on both MLX Studio and MTPLX. Once they become more stable, I expect them to provide a meaningful jump in tokens per second on the exact same hardware. It also shows that there are definitely other ways to get more speed out of the same hardware, and that the 11 tokens/second ceiling isn't a fundamental limit, just a practical one for now. LM Studio (and thus llama.cpp) can definitely be improved on the performance front, and I hope to see that happen in the future.
 
 ## Doing More With Less: RTK and ThinkingCap
 
@@ -118,7 +116,7 @@ If I can't push past that ~11 tokens/second hardware ceiling right now, the next
 
 **RTK (Rust Token Killer)** is a CLI proxy I've wired into Open Code via a hook. It transparently rewrites everyday dev commands, `git status` becomes `rtk git status` behind the scenes, before their output reaches the model, filtering out the noise the model doesn't actually need. It claims 60-90% savings on typical dev operations, and from what I can tell in practice, that's roughly right. Since it's hook-based, it costs me nothing to use, it just works in the background.
 
-**ThinkingCap-Qwen3.6-27B**, a [fine-tune of Qwen3.6-27B](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B) from BottleCap AI, attacks the problem from a different angle: reasoning tokens. It's trained with reinforcement learning to spend its thinking budget more strategically, cutting thinking-token usage by about half on average while holding onto the base model's accuracy. On GPQA-Diamond, for example, it dropped from 10,777 to 3,351 thinking tokens (a 67.8% reduction) while staying above 85% accuracy.
+**ThinkingCap-Qwen3.6-27B**, a [fine-tune of Qwen3.6-27B](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.6-27B) from BottleCap AI, attacks the problem from a different angle: reasoning tokens. It's trained with reinforcement learning to spend its thinking budget more strategically, cutting thinking-token usage by about half on average while holding onto the base model's accuracy. On GPQA-Diamond, for example, it dropped from 10,777 to 3,351 thinking tokens (a 67.8% reduction) while staying highly accurate.
 
 I swapped my plain Qwen3.6-27B for Qwen3.6-27B-ThinkingCap and paired it with RTK. The tokens-per-second number in the corner hasn't moved, it's still around 11. But since each task now burns through far fewer thinking tokens, and RTK strips a chunk of tool-output tokens before they ever reach the model, the effective time to a useful result dropped substantially. Tasks that used to mean staring at a spinner while the model churned through pages of reasoning now resolve noticeably faster in wall-clock time, even on the same hardware at the same raw speed.
 
@@ -135,7 +133,7 @@ That's a massive drop in RAM usage for what's still, on paper, the same 27B mode
 | Coding | ~90 | ~90 | 86.0 |
 | Agentic tool use | 80.0 | ~80.0 | 74.0 |
 
-Math and coding barely move. Agentic tool use takes the biggest hit by far, a 7.5% relative drop compared to math's roughly 2%, which turned out to be exactly the category that matters most for how I actually use this model.
+Math and coding barely move. Agentic tool use and coding take the biggest hit, a 7.5% and 4.4% relative drop compared to math's roughly 2%, which turned out to be exactly the category that matters most for how I actually use this model.
 
 My first attempt at running it didn't even get that far: LM Studio flat out refused to load the ternary GGUF, no error message, just a model that never finished loading. A recent LM Studio update fixed that, and once it loaded, the speed difference was immediately obvious: **~25 tokens per second**, more than double my usual 11 tokens/second on the 4-bit version. That tracks with the memory-bandwidth math from earlier: at 5.9 GB instead of 16 GB, the theoretical ceiling on my M4 Pro jumps to roughly 46 tokens/second, and 25 tokens/second is in the same ballpark once you apply the same real-world overhead I measured before, maybe even a bit less efficient, likely because ternary matrix kernels aren't as optimized yet as regular 4-bit ones.
 
@@ -149,7 +147,7 @@ It started "thinking," and then crashed outright, exit code null, no useful erro
 
 ## Conclusion
 
-For now, I'll stick with Qwen3.6-27B-ThinkingCap for anything that goes through Open Code. But if you're on a Mac with less than 48 GB of unified memory, Ternary Bonsai 27B is well worth experimenting with. Just don't expect it to survive a serious agentic coding session yet.
+For now, I'll stick with Qwen3.6-27B-ThinkingCap for anything complex that goes through Open Code. But if you're on a RAM restricted environment, Ternary Bonsai 27B is well worth experimenting with. It could serve as a great autocomplete model. Just don't expect it to survive a serious agentic coding session yet.
 
 My local setup:
 
@@ -160,3 +158,5 @@ My local setup:
 ## Next Up
 
 I recently got my hands on a Dell Max Pro GB10 server (thanks Willem!) to see if I can run larger, more capable models and finally break past what my M4 Pro can do. Stay tuned for my next post, where I'll share how that experiment went.
+
+Meanwhile, keep an eye on the recently announced Qwen3.8 models, which promise to be even more capable than the 3.6 family. If they can close the gap to Claude 5, we may have a new local AI champion on our hands!
