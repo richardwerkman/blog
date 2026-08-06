@@ -147,13 +147,9 @@ It started "thinking," and then crashed outright, exit code null, no useful erro
 
 ## Conclusion
 
-For now, I'll stick with Qwen3.6-27B-ThinkingCap for anything complex that goes through Open Code. But if you're on a RAM restricted environment, Ternary Bonsai 27B is well worth experimenting with. It could serve as a great autocomplete model. Just don't expect it to survive a serious agentic coding session yet.
+Running LLMs locally on MacOS is not as polished as it is on other platforms like Linux. The same tools exist, but with limitations. Without tools like MTP and prefix caching it just isn't performing as well. Alternatives exist, but are still experimental and I wouldn't recommend them for now. I tried to get Qwen3.6-27B up to a usable tokens per second, but for now it seems it is just not possible. I'll stick with `Qwen3.6-35B-A3B` on my Mac.
 
-My local setup:
-
-- **LM Studio** still the best choice for model management and JIT loading of models, but promising alternatives are on the horizon
-- **Qwen3.6-35B-A3B** is the best choice for easy tasks.
-- **Qwen3.6-27B-ThinkingCap**, paired with RTK, is now my daily driver for complex tasks: same 11 tokens/second ceiling as the plain model, but a noticeably smoother, faster-feeling experience thanks to fewer wasted tokens.
+However, the hardware sure is capable of much more! Hopefully soon llama.cpp will catch up for MacOs and we will be able to squeeze out a lot more performance.
 
 ## Next Up
 
