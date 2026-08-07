@@ -147,7 +147,7 @@ It started "thinking," and then crashed outright, exit code null, no useful erro
 
 ## Conclusion
 
-Running LLMs locally on MacOS is not as polished as it is on other platforms like Linux. The same tools exist, but with limitations. Without tools like MTP and prefix caching it just isn't performing as well. Alternatives exist, but are still experimental and I wouldn't recommend them for now. I tried to get Qwen3.6-27B up to a usable tokens per second, but for now it seems it is just not possible. I'll stick with `Qwen3.6-35B-A3B` on my Mac.
+Running LLMs locally on MacOS is not as polished as it is on other platforms like Linux. The same tools exist, but with limitations. Without optimizations like MTP and prefix caching it just isn't performing as well. Alternatives exist, but are still experimental and I wouldn't recommend them for now. I tried to get Qwen3.6-27B up to a usable tokens per second, but for now it seems it is just not possible. I'll stick with `Qwen3.6-35B-A3B` on my Mac.
 
 However, the hardware sure is capable of much more! Hopefully soon llama.cpp will catch up for MacOs and we will be able to squeeze out a lot more performance.
 
