@@ -13,9 +13,10 @@ After weeks of experimenting with running AI models locally on my MacBook Pro I 
 
 Like described in my previous post my setup consists of:
 
-1. **LM Studio** for model management and JIT loading of models
-2. **Qwen3.6-35B-A3B** for fast, capable responses, vision capabilities, and excellent tool-calling
-4. **MLX optimization** for maximum performance on my M4 Pro
+1. **MacBook M4 Pro** to run everything local
+2. **LM Studio** for model management and JIT loading of models
+3. **Qwen3.6-35B-A3B** for fast, capable responses, vision capabilities, and excellent tool-calling
+4. **MLX optimization** for utilizing the integrated GPU
 5. **Open Code** as the agent harness, for smooth integration and execution of tasks
 
 I've put this setup to work on a bunch of real world tasks:
@@ -149,7 +150,7 @@ It started "thinking," and then crashed outright, exit code null, no useful erro
 
 Running LLMs locally on MacOS is not as polished as it is on other platforms like Linux. The same tools exist, but with limitations. Without optimizations like MTP and prefix caching it just isn't performing as well. Alternatives exist, but are still experimental and I wouldn't recommend them for now. I tried to get Qwen3.6-27B up to a usable tokens per second, but for now it seems it is just not possible. I'll stick with `Qwen3.6-35B-A3B` on my Mac.
 
-However, the hardware sure is capable of much more! Hopefully soon llama.cpp will catch up for MacOs and we will be able to squeeze out a lot more performance.
+However, the hardware sure is capable of much more! Hopefully soon llama.cpp will catch up for MacOS and we will be able to squeeze out a lot more performance.
 
 ## Next Up
 
