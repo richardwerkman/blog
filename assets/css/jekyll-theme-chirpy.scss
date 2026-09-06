@@ -1,0 +1,24 @@
+---
+---
+
+/* prettier-ignore */
+@use 'main
+{%- if jekyll.environment == 'production' -%}
+  .bundle
+{%- endif -%}
+';
+
+/* append your custom style below */
+
+/*
+  Fix: code blocks render as a single line.
+
+  `_includes/refactor-content.html` strips the outer `<pre>` tag that Rouge
+  wraps code blocks in (workaround for a jekyll-compress-html nested-<pre>
+  bug), which also strips the browser's default `white-space: pre` behavior.
+  Without it, newlines/indentation inside `.highlight code` collapse to
+  single spaces. Restore it explicitly here.
+*/
+.highlight code {
+  white-space: pre;
+}

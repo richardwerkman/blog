@@ -27,7 +27,7 @@ It wasn't. The server version of LM Studio feels a lot less polished.
 
 Downloading models through lmster was a hassle. There is a model browser, but it only offers a handful of models out of the box. Also it doesn't let you pick a quantization variant, just the base model. That way I ended up downloading models in FP16, without an MTP head, so I missed performance. That's why I ended up downloading models manually from HuggingFace anyway. Once a model was loaded, the server worked, but configuration options were limited. Since the Dell box runs on Linux I could enable MTP for the first time (as I explained in my last blog it isn't implemented for MLX in llama.cpp on MacOS). But other improvements were missing... For example I learned about `flash-attention`, giving more performance on large contexts. But the option is missing in LMster. I couldn't tune the model the way I wanted, and that lack of configurability was a dealbreaker for chasing performance.
 
-```
+```bash
 lms server start --port 1234 --bind 0.0.0.0
 
 lms load Qwen3.8-27B \
@@ -47,7 +47,7 @@ Next I tried **llama.cpp**, the actual core of LM Studio. It's highly configurab
 
 On the GB10, I was hopeful. I loaded Qwen3.8-27B with llama.cpp, enabled features like `-fa` (flash attention), and crossed my fingers.
 
-```
+``` bash
 llama-server \
   -m ~/models/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_XL.gguf \
   --mmproj ~/models/unsloth/Qwen3.8-27B-GGUF/mmproj-BF16.gguf \
@@ -80,7 +80,7 @@ This is where things got complicated, interesting and rewarding. I found out abo
 
 I started with a simple command to serve a model:
 
-```
+``` bash
 vllm serve bullpoint/Qwen3-Coder-Next-AWQ-4bit \
   --port 8000 \
   --enable-auto-tool-choice \
@@ -101,7 +101,7 @@ Every decision had consequences. Get the memory settings wrong and vLLM would co
 
 All of these settings weren't clearly documented for the Qwen models. There are some cookbooks out there, but they are often outdated or for different models. I had to piece together the right combination of settings through trial and error.
 
-```
+``` bash
 vllm serve unsloth/Qwen3-Coder-Next-FP8 \
   --port 8000 \
   --enable-auto-tool-choice \
