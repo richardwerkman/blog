@@ -2,7 +2,7 @@
 title: "My Journey Running AI Locally: Taking Local to the Next Level"
 date: 2026-07-30 10:00:00 +0000
 categories: [AI, Local AI, Machine Learning]
-tags: [local-ai, llm, mlx, mlx-studio, mtplx, lm-studio, m4-pro, mtp, speculative-decoding, prefix-caching, rtk, thinkingcap, dell-max-pro]
+tags: [local-ai, llm, mlx, mlx-studio, mtplx, lm-studio, m4-pro, mtp, speculative-decoding, prefix-caching, rtk, thinkingcap]
 layout: post
 comments: true
 ---
