@@ -119,7 +119,7 @@ This already gave me better performance, especially with multiple concurrent str
 
 Once I had vLLM working correctly, I discovered **NVFP4** quantization. It is Nvidia's native 4-bit format optimized for their GPUs. This isn't a general-purpose quantization like AWQ or GPTQ; it's specifically tuned for Nvidia blackwell hardware, which means the kernels are optimized for the exact architecture in the GB10.
 
-```
+``` bash
 TORCH_NCCL_ENABLE_MONITORING=0 vllm serve unsloth/Qwen3.8-27B-NVFP4 \
   --max-model-len 262144  \
   --gpu-memory-utilization 0.70 \
