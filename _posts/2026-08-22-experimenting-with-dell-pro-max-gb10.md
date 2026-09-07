@@ -37,7 +37,7 @@ lms load Qwen3.8-27B \
   --identifier qwen3.8-27b
 ```
 
-The result: **20 tokens per second**.
+The result: **20 tokens per second**. Which is better than the 11 tokens per second I got on my M4 Pro, but I was hoping for more. The main bennefit was that I could now enable MTP, which I couldn't do on my Mac.
 
 The setup is pretty easy (once the right model is downloaded). However, LMSter felt like a stepping stone, not a destination. It got a model running, but it wasn't a great experience, and it was clearly less configurable than what other solutions offer. Time to move on.
 
@@ -95,7 +95,7 @@ vLLM does work out of the box. But you will quickly run into trouble using the m
 
 - **Tool calling**: Each model handles tool calling different. vLLM has a setting for a tool calling template. If you forget to set this setting the model will just fail to call tools at runtime.
 - **Load times**: Where llama.cpp just takes 30 seconds to load, vLLM takes minutes. It does a lot of optimizing and takes all the RAM it can. This makes "just in time loading" very impractical. Also testing different settings takes a long time, if changing a setting means 5 minutes of loading before the model can be tested.
-- **Auto settings**: Some settings are automatically set by vLLM, and overriding them could even hurt your performance. For example Flash Attention `--attention-backend FLASH_ATTN` might seem like a good idea, but vLLM uses FlashInfer attention which is better than Flash Attention. You need to know which settings to override and which to leave alone.
+- **Default settings**: Some settings are automatically set by vLLM, and overriding them could even hurt your performance. For example Flash Attention `--attention-backend FLASH_ATTN` might seem like a good idea, but vLLM uses FlashInfer attention which is better than Flash Attention. You need to know which settings to override and which to leave alone.
 
 Every decision had consequences. Get the memory settings wrong and vLLM would consume all available RAM, crash running apps, and leave you staring at a frozen desktop. I learned this the hard way.
 
@@ -113,7 +113,7 @@ vllm serve unsloth/Qwen3-Coder-Next-FP8 \
   -q fp8
 ```
 
-This already gave me better performance, especially with multiple concurrent streams. But I still wasn't hitting the numbers I wanted. The key was finding the right quantization format for the hardware.
+This already gave me better performance, especially with multiple concurrent streams. But I still wasn't hitting the numbers I wanted. Also it kept outputting unrelated warnings to the console `Failed to check the 'should dump' flag on TCPStore... Broken pipe` every second, which was a bit annoying. It has to do with multi GPU setups which I didn't use. That's why I ended up disabling the NCCL monitoring with `TORCH_NCCL_ENABLE_MONITORING=0`. It seems to be a known issue with vLLM, but it didn't affect performance.
 
 ### The breakthrough: NVFP4
 
@@ -138,9 +138,7 @@ TORCH_NCCL_ENABLE_MONITORING=0 vllm serve unsloth/Qwen3.8-27B-NVFP4 \
 
 With NVFP4, Qwen3.8-27B on vLLM hit **30 tokens per second** on a single stream, and significantly higher throughput with multiple streams. Prefill also became much faster, and the model was able to handle more concurrent requests without running out of memory.
 
-I ended up using Qwen3.8-27B in NVFP4 format for the rest of my experiments. It was the best combination of model intelligence and quantization for the GB10 hardware. I was able to use it in open code on my mac and also experimented with running a Hermes agent 24/7 on a VM using the Dell box as the LLM provider. It was quite a fun experiment to see how well the model could handle continuous requests and tool calls, and it performed admirably. It finally felt like I was using a cloud service provider instead of experimenting on a local machine!
-
-Also it kept outputting unrelated warnings to the console `Failed to check the 'should dump' flag on TCPStore... Broken pipe` every second, which was a bit annoying. It has to do with multi GPU setups which I didn't use. That's why I ended up disabling the NCCL monitoring with `TORCH_NCCL_ENABLE_MONITORING=0`. It seems to be a known issue with vLLM, but it didn't affect performance.
+I ended up using Qwen3.8-27B in NVFP4 format for the rest of my experiments. It was the best combination of model intelligence and quantization for the GB10 hardware. I was able to use it in open code on my mac and also experimented with running a Hermes agent 24/7 on a VM using the Dell box as the LLM provider. It was quite a fun experiment to see how well the model could handle continuous requests and tool calls, and it performed admirably. It finally felt like I was using a cloud service provider instead of experimenting on a local machine! But the speed was still a lot slower than I am used to with cloud providers like Github Copilot. A large prompt could take hours to complete on xhigh thinking mode...
 
 ## Lessons Learned
 
@@ -196,9 +194,9 @@ I also read about SGlang which is a competitor to vLLM. It is a new inference en
 
 The Dell Pro Max GB10 proved it has the raw horsepower to run large models at impressive speeds. The interesting part is that the hardware is pretty similar to my MacBook in terms of Unified Memory bandwidth, but the software ecosystem on Linux, particularly with vLLM and NVFP4, allowed me to extract significantly more performance. This bodes well for the future of Mac, there is a lot of potential for Apple Silicon to catch up in the future with custom quantizations and better software support. But for now, if you want to run large models at cloud-competitive speeds, Linux (and NVIDIA) with the right software stack is still the way to go.
 
-vLLM with NVFP4 gave me the best numbers: 30 tokens per second with Qwen3.8-27B. But getting there took a month of trial and error, multiple failed configurations, and more than a few moments of questioning my life choices when Firefox crashed because vLLM ate all my RAM.
+vLLM with NVFP4 gave me the best numbers: 30 tokens per second with Qwen3.8-27B. But getting there took a month of trial and error, multiple failed configurations, and more than a few moments of questioning my life choices when tool calling failed again and again. The lesson is clear: if you want to run large models locally, be prepared to invest time in understanding the software stack, the model's requirements, and the hardware's capabilities. It's not plug-and-play, but the rewards are worth it.
 
-I also learned faster memory to be worth more than having more memory. The GB10 has 128GB of Unified Memory, but the Qwen3.8-27B model is so efficient that it doesn't need all that RAM to run well. A machine with faster RAM and less capacity might have been a better choice for my use case. Of course this explains why graphics cards with 24GB or more of VRAM are so pricey these days. A single RTX 5090 costs as much as a Dell Pro Max GB10, while having only 32GB of VRAM. I'm thinking of shopping for a machine myself, and I will definitely prioritize faster RAM over more RAM.
+I also learned faster memory to be worth more than having more memory. At 30 t/s the speed is not there for actual hands on coding work. It's fine for background tasks, but I definitely need faster output for a live coding session. The GB10 has 128GB of Unified Memory, but the Qwen3.8-27B model is so efficient that it doesn't need all that RAM to run well. A machine with faster RAM and less capacity might have been a better choice for my use case. Of course this explains why graphics cards with 24GB or more of VRAM are so pricey these days. A single RTX 5090 costs as much as a Dell Pro Max GB10, while having only 32GB of VRAM. I'm thinking of shopping for a machine myself, and I will definitely prioritize faster RAM over more RAM.
 
 ## Next Up
 
