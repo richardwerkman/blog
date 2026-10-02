@@ -19,17 +19,31 @@ The transformation has been dramatic. The oMLX team clearly took stability serio
 
 ### The Secret Sauce: Paged SSD KV Cache
 
-oMLX doesn't implement traditional PagedAttention like vLLM does, but they've built something even better for Apple Silicon—a **Paged SSD KV Cache** system. Here's how it works: oMLX maintains a two-tier memory hierarchy where hot context lives in fast unified memory while older, less-used KV cache blocks are intelligently spilled to SSD. When you reference a previous conversation prefix, oMLX restores the cached block from disk instead of recomputing it.
+oMLX doesn't implement traditional PagedAttention like vLLM does, but they've built something very similar... A **Paged SSD KV Cache** system. Here's how it works: oMLX maintains a two-tier memory hierarchy where hot context lives in fast unified memory while older, less-used KV cache blocks are intelligently spilled to SSD. When you reference a previous conversation prefix, oMLX restores the cached block from disk instead of recomputing it.
 
-The real-world impact is staggering. Time to first token in long-context scenarios drops from 30-90 seconds down to 1-3 seconds. On my M4 Pro, this is the difference between waiting out a bathroom break and getting an instant response. There's also **TurboQuant** for optional 2-8 bit KV cache compression, which you can toggle in the Admin UI. This is another lever for squeezing out more performance and managing memory usage effectively.
+![oMLX tiered caching: prompt, kv-cache, memory cache, ssd-cache](/assets/img/posts/omlx-saves-the-day/tiered-cache.svg)
 
-It's a brilliant adaptation of PagedAttention's block-based philosophy, but optimized specifically for Mac hardware constraints rather than fighting them.
+The real-world impact is staggering. Time to first token in long-context scenarios drops from 30+ seconds down to 1-3 seconds. On my M4 Pro, this is the difference between waiting out a bathroom break and getting an instant response. There's also **TurboQuant** for optional 2-8 bit KV cache compression, which you can toggle in the Admin UI. This is another lever for squeezing out more performance and managing memory usage effectively.
 
-Where I used to reach for the force quit button within minutes, I now run models for hours without a hiccup.
+### Resource Management
+
+Just like months ago I still noticed that memory usage spiked significantly during heavy workloads. It would drop from a relatively stable peak to the baseline in a matter of seconds, which could lead to temporary slowdowns. Then the memory usage would spike again as new data was loaded into the cache.
+
+![Memory Usage Spike](/assets/img/posts/omlx-saves-the-day/memory-usage.png)
+
+However, I found out that there is a setting to prevent just that! The two tiered caching system allows you to set limits for both in-memory and SSD caching, ensuring that memory usage remains under control even during heavy workloads. By default, the in-memory cache is set to 0. Which means the kv-cache is removed as soon as it is no longer needed. But is then immediately reloaded from the SSD cache if required again, causing the memory spikes I observed. Setting the in-memory cache to a higher value helps mitigate these spikes by keeping frequently accessed data readily available in memory, reducing the need to constantly reload from the SSD cache.
+
+It also helps improve overall system responsiveness, as the kv-cache can be accessed more quickly from memory rather than constantly being reloaded from the SSD cache.
+
+![Resource Management Settings](/assets/img/posts/omlx-saves-the-day/resource-management.png)
+
+Also note that setting the SSD cache size appropriately is equally important. If the SSD cache is too small, frequently accessed data may be evicted prematurely, leading to more frequent reloads from slower storage and potentially negating the benefits of the in-memory cache. Balancing both in-memory and SSD cache sizes according to your workload and available resources is key to achieving optimal performance and stability.
+
+Keep in mind that oMLX writes to your SSD constantly. To prevent excessive wear on your internal SSD, consider using an external SSD for caching if possible, or ensure that your internal SSD has sufficient endurance for the expected workload. If you plan to run your Mac as a long-term local AI workstation, investing in a high-endurance external SSD is highly recommended. It would be a shame if your Mac's internal SSD wore out prematurely due to heavy caching operations.
 
 ## Performance That Actually Reaches the Finish Line
 
-The real win is in the numbers. I'm running **Qwen 3.8-27B** with **Multi-Token Prediction (MTP)** and **prefix-caching** enabled, and I'm consistently hitting **20 tokens per second**. But here's the kicker: on long conversations with massive context windows, the prefill no longer takes minutes. The prefix-caching ensures that repeated context is handled intelligently, meaning I'm not waiting around for the model to process the same tokens over and over.
+The real win is in the numbers. I'm running **Qwen 3.8-27B** with **Multi-Token Prediction (MTP)** and **prefix-caching** enabled, and I'm consistently hitting **22 tokens per second**. But here's the kicker: on long conversations with massive context windows, the prefill no longer takes minutes. The prefix-caching ensures that repeated context is handled intelligently, meaning I'm not waiting around for the model to process the same tokens over and over.
 
 This is the kind of practical, day-to-day improvement that makes local AI actually viable.
 
@@ -51,31 +65,17 @@ What pushes oMLX from "good enough" to "actually great" is attention to the user
 
 **JIT Model Loading**: Just like with LM Studio I can load models on demand. This means most of the time I don't even have to open the oMLX app to start working. I just start Open Code and give a prompt and the model I chose will load automatically in the background.
 
+**Shared model files**: oMLX looks up models on disk downloaded by other tools such as LM Studio, Ollama, HuggingFace CLI, and more, allowing you to seamlessly use models across different platforms without redundant downloads. This out-of-the-box compatibility saves time and storage space, making it easier to manage your local AI models efficiently.
+
 **Quantizing**: oMLX supports model quantization, so if you can't find the exact quantization for a model, you can create it yourself. This allows you to optimize models for your specific hardware, balancing performance and memory usage according to your needs. It also allows you to keep the MTP head to benefit from faster token prediction even with quantized models. Most quantizations I find online miss the MTP head so creating your own ensures you don't lose this advantage.
 
 **Edge Model Support**: oMLX is optimized for running models at the edge, meaning you can leverage the newest models immediately on your local machine. For example, support for the Qwen4 architecture was released within days of its official announcement, allowing early adopters to experiment with cutting-edge models without having to use cloud-based solutions.
 
-**ANE Support**: oMLX takes advantage of Apple's Neural Engine (ANE) for accelerated model inference on supported Macs. This allows for faster processing and lower power consumption compared to relying solely on the CPU or GPU. By leveraging the ANE, oMLX can squeeze the most out of the modern chips like M4 and M5. It's a small boost, but every bit helps when running large models locally.
-
-## Resource Management
-
-Just like months ago I still noticed that memory usage spiked significantly during heavy workloads. It would jump from a relatively low baseline to near the maximum available memory in a matter of seconds, which could lead to temporary slowdowns or the need to reload models.
-
-![Memory Usage Spike](/assets/img/posts/omlx-saves-the-day/memory-usage.png)
-
-However, I found out that there is a setting to prevent just that! The two tiered caching system allows you to set limits for both in-memory and SSD caching, ensuring that memory usage remains under control even during heavy workloads. By default, the in-memory cache is set to 0. Which means the kv-cache is removed as soon as it is no longer needed. But is then immediately reloaded from the SSD cache if required again, causing the memory spikes I observed. Setting the in-memory cache to a higher value helps mitigate these spikes by keeping frequently accessed data readily available in memory, reducing the need to constantly reload from the SSD cache.
-
-It also helps improve overall system responsiveness, as the kv-cache can be accessed more quickly from memory rather than constantly being reloaded from the SSD cache.
-
-![Resource Management Settings](/assets/img/posts/omlx-saves-the-day/resource-management.png)
-
-Also note that setting the SSD cache size appropriately is equally important. If the SSD cache is too small, frequently accessed data may be evicted prematurely, leading to more frequent reloads from slower storage and potentially negating the benefits of the in-memory cache. Balancing both in-memory and SSD cache sizes according to your workload and available resources is key to achieving optimal performance and stability.
-
-Keep in mind that oMLX writes to your SSD constantly. To prevent excessive wear on your internal SSD, consider using an external SSD for caching if possible, or ensure that your internal SSD has sufficient endurance for the expected workload. If you plan to run your Mac as a long-term local AI workstation, investing in a high-endurance external SSD is highly recommended. It would be a shame if your Mac's internal SSD wore out prematurely due to heavy caching operations.
+**ANE Support**: oMLX takes advantage of **Apple's Neural Engine** (ANE) for accelerated model inference on supported Macs. This allows for faster processing and lower power consumption compared to relying solely on the CPU or GPU. By leveraging the ANE, oMLX can squeeze the most out of the modern chips like M4 and M5. It's a small boost, but every bit helps when running large models locally.
 
 ## Conclusion
 
-What made me switch back to oMLX wasn't a single feature. It was the combination of stability, performance, and thoughtful design coming together. The overall experience felt polished and reliable, which made it easy to justify the switch.
+What made me switch to oMLX wasn't a single feature. It was the combination of stability, performance, and thoughtful design coming together. The overall experience felt polished and reliable, which made it easy to justify the switch.
 
 oMLX is now my go-to choice for running large language models locally on Apple Silicon. It combines stability, performance, and thoughtful design, making it the most reliable option I've found for my workflow. If you tried oMLX early and gave up like I did, I'd say it's worth revisiting. The project has matured in all the ways that matter. I no longer recommend LM Studio as the preferred local AI engine. oMLX has proven to be more stable, performant, and thoughtfully designed for the Mac ecosystem, making it my go-to choice for running large language models locally.
 
