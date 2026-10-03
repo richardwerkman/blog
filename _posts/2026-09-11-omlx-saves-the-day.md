@@ -67,7 +67,7 @@ What pushes oMLX from "good enough" to "actually great" is attention to the user
 
 **Shared model files**: oMLX looks up models on disk downloaded by other tools such as LM Studio, Ollama, HuggingFace CLI, and more, allowing you to seamlessly use models across different platforms without redundant downloads. This out-of-the-box compatibility saves time and storage space, making it easier to manage your local AI models efficiently.
 
-**Quantizing**: oMLX supports model quantization, so if you can't find the exact quantization for a model, you can create it yourself. This allows you to optimize models for your specific hardware, balancing performance and memory usage according to your needs. It also allows you to keep the MTP head to benefit from faster token prediction even with quantized models. Most quantizations I find online miss the MTP head so creating your own ensures you don't lose this advantage.
+**Quantizing**: oMLX supports model quantization, so if you can't find a specific quantization for a model, you can create it yourself. This allows you to optimize models for your specific hardware, balancing performance and memory usage according to your needs. It also allows you to keep the MTP head to benefit from faster token prediction even with quantized models. Most quantizations I find online miss the MTP head so creating your own ensures you don't lose this advantage.
 
 **Edge Model Support**: oMLX is optimized for running models at the edge, meaning you can leverage the newest models immediately on your local machine. For example, support for the Qwen4 architecture was released within days of its official announcement, allowing early adopters to experiment with cutting-edge models without having to use cloud-based solutions.
 
