@@ -43,9 +43,8 @@
   <!-- Explainer -->
   <rect x="30" y="240" width="1030" height="105" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
   <text x="50" y="268" font-size="15" font-weight="700" fill="#0f172a">KV cache vs. memory cache</text>
-  <text x="50" y="294" font-size="13" fill="#0f172a"><tspan font-weight="700" fill="#9d174d">KV cache</tspan> = the data. The keys and values the model computes for every token, so it never has to re-read the prompt.</text>
-  <text x="50" y="317" font-size="13" fill="#0f172a"><tspan font-weight="700" fill="#92400e">Memory cache</tspan> = the place. A fast RAM tier that holds blocks of KV cache, and spills them to the SSD cache when full.</text>
-  <text x="50" y="337" font-size="12" fill="#475569">With the memory cache at 0, blocks go straight to SSD and every reuse is a reload from disk.</text>
+  <text x="50" y="294" font-size="13" fill="#0f172a"><tspan font-weight="700" fill="#9d174d">KV cache</tspan> = The keys and values the model computes for every token, so it doesn't have to re-read the prompt for every next token.</text>
+  <text x="50" y="317" font-size="13" fill="#0f172a"><tspan font-weight="700" fill="#92400e">Memory cache</tspan> = A fast RAM cache that holds blocks of KV cache, and spills them to the SSD cache.</text>
 
   <!-- Outcomes -->
   <text x="545" y="388" text-anchor="middle" font-size="14" fill="#0f172a"><tspan font-weight="700" fill="#166534">Hit</tspan> in memory or SSD cache: reuse the KV blocks, skip prefill (time to first token 1-3 s)</text>
